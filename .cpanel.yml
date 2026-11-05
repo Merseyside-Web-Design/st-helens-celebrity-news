@@ -1,0 +1,9 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=$HOME/public_html/
+    - /bin/cp *.html *.css *.js $DEPLOYPATH
+    - /bin/mkdir -p ${DEPLOYPATH}img
+    - /bin/cp img/* ${DEPLOYPATH}img/
+    - /bin/chmod 755 ${DEPLOYPATH}img
+    - /bin/chmod 644 ${DEPLOYPATH}*.html ${DEPLOYPATH}*.css ${DEPLOYPATH}*.js ${DEPLOYPATH}img/*
