@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sthelenscelebritynews.co.uk/sitemap.xml

@@ -132,3 +132,4 @@ mark{background:#FFE3BF}
 footer.site{border-top:4px solid var(--purple);padding:12px 0 30px;font-size:12px;color:var(--muted);text-align:center}
 footer.site p{margin:4px 0}
 .counter{display:inline-block;font:bold 13px "Courier New",monospace;background:#000;color:#39FF14;padding:2px 6px;letter-spacing:2px}
+.sitetitle{margin:0;font-size:inherit;line-height:0}
