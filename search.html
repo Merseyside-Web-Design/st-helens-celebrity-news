@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search – St Helens Celebrity News</title>
+<meta name="description" content="Search St Helens Celebrity News.">
+<meta name="theme-color" content="#6600FF">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%236600FF'/%3E%3Ctext x='8' y='12.5' font-family='Arial' font-weight='bold' font-size='11' text-anchor='middle' fill='%23FDA138'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="wrap">
+<header class="masthead">
+  <div class="brand">
+    <a href="index.html"><img class="logo" src="img/scn-logo.gif" alt="St Helens Celebrity News" width="1275" height="82"></a>
+    <img class="strap" src="img/strapline.gif" alt="The glitzy world of the post-industrial shithole" width="479" height="31">
+  </div>
+  <div class="snaps" aria-label="Spotted around town"><figure><img src="img/topshops.jpg" alt="Top shops" width="72" height="96"><figcaption>Top shops</figcaption></figure><figure><img src="img/sarrys.jpg" alt="Sarry&#x27;s" width="72" height="96"><figcaption>Sarry&#x27;s</figcaption></figure><figure><img src="img/pitrags.jpg" alt="Woden" width="72" height="96"><figcaption>Woden</figcaption></figure><figure><img src="img/house.jpg" alt="Celeb mansion" width="72" height="96"><figcaption>Celeb mansion</figcaption></figure></div>
+</header>
+<nav class="navbar" aria-label="Main">
+  <ul><li><a class="btn" href="index.html">Home</a></li><li><a class="btn" href="news.html">News</a></li><li><a class="btn" href="pubs.html">Pub Guide</a></li><li><a class="btn" href="dictionary.html">&#x27;Tellins Dictionary</a></li><li><a class="btn" href="world.html">Around the World</a></li><li><a class="btn" href="quotes.html">Quotes</a></li><li><a class="btn" href="arcade.html">Arcade</a></li><li><a class="btn" href="search.html" aria-current="page">Search</a></li></ul>
+  <details><summary><span class="burger" aria-hidden="true"></span>Menu</summary><ul><li><a class="btn" href="index.html">Home</a></li><li><a class="btn" href="news.html">News</a></li><li><a class="btn" href="pubs.html">Pub Guide</a></li><li><a class="btn" href="dictionary.html">&#x27;Tellins Dictionary</a></li><li><a class="btn" href="world.html">Around the World</a></li><li><a class="btn" href="quotes.html">Quotes</a></li><li><a class="btn" href="arcade.html">Arcade</a></li><li><a class="btn" href="search.html" aria-current="page">Search</a></li></ul></details>
+  <span class="issue">Est. 2002 · Still fettlin'</span>
+</nav>
+</div>
+
+<div class="wrap">
+<main id="content">
+<div class="cols"><div class="main"><section class="panel grey">
+<h1 class="pagetitle"><label for="q">Search the site for shite</label></h1>
+<form class="search" action="search.html" method="get" role="search" style="margin-top:10px"><input id="q" name="q" type="search" placeholder="e.g. pies, Parr, Woden"><button type="submit">Search!</button></form>
+<p id="count" class="meta" aria-live="polite" style="margin-top:10px"></p><ul id="results" class="results"></ul></section></div></div>
+</main>
+<div class="javabar"><img src="img/javabar.gif" alt="Java Bar" width="450" height="72"></div>
+<footer class="site">
+  <p>Back in the day we clocked up <span class="counter">1112808</span> page views since July 2002.</p>
+  <p>© St Helens Celebrity News 2002–2026 · All St Helens born and bread · Complaints to the webmaster</p>
+</footer>
+</div>
+<script src="search-index.js"></script><script>
+(function(){var q=(new URLSearchParams(location.search).get("q")||"").trim();var box=document.getElementById("q");box.value=q;if(!q)return;
+function e(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var terms=q.toLowerCase().split(/\s+/).filter(Boolean),out=[];
+(window.SCN_INDEX||[]).forEach(function(it){var hay=(it.t+" "+it.x).toLowerCase(),score=0;
+ for(var i=0;i<terms.length;i++){if(hay.indexOf(terms[i])<0)return;score+=(it.t.toLowerCase().indexOf(terms[i])>=0?5:1);}
+ var p=it.x.toLowerCase().indexOf(terms[0]),s=Math.max(0,p-70),snip=(s?"…":"")+it.x.substr(s,180)+"…";out.push({it:it,score:score,snip:snip});});
+out.sort(function(a,b){return b.score-a.score});
+document.getElementById("count").textContent=out.length?out.length+" result"+(out.length>1?"s":"")+" for \u201c"+q+"\u201d":"Nowt found for \u201c"+q+"\u201d. Try another word.";
+var re=new RegExp("("+terms.map(function(t){return t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}).join("|")+")","gi");
+document.getElementById("results").innerHTML=out.map(function(r){return '<li><a href="'+r.it.u+'"><b>'+e(r.it.t)+'</b></a><br><span class="meta">'+e(r.it.d||"")+'</span><br><span>'+e(r.snip).replace(re,"<mark>$1</mark>")+'</span></li>'}).join("");})();
+</script>
+</body>
+</html>
