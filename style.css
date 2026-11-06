@@ -44,7 +44,7 @@ img{max-width:100%;height:auto}
   .navbar>ul{display:none}
   .navlogo{display:block;flex:1 1 auto;min-width:0;line-height:0;opacity:0;visibility:hidden;transition:opacity .2s}
   .scrolled .navlogo{opacity:1;visibility:visible}
-  .navlogo img{height:22px;width:auto;max-width:100%;background:#fff;padding:3px 5px;border-radius:2px}
+  .navlogo img{height:26px;width:auto;max-width:100%}
   .navbar details{display:block;flex:0 0 auto}
   .navbar summary{list-style:none;cursor:pointer;color:#fff;font:bold 14px Arial,sans-serif;min-height:44px;padding:0 6px;display:flex;align-items:center;gap:8px}
   .navbar summary::-webkit-details-marker{display:none}
@@ -156,3 +156,8 @@ footer.site p{margin:4px 0}
 .pi-btn.fire{flex:1.4 1 0;background:#E8303A;color:#fff;border-color:#ff8a8f}
 @media (hover:hover) and (pointer:fine){.pi-pad{display:none}}
 .pi-opts{display:flex;gap:8px}
+
+.game-canvas{width:100%;max-width:480px;height:auto;background:#0B0018;border:4px solid var(--purple);image-rendering:pixelated;touch-action:none}
+.dpad{display:grid;grid-template-columns:repeat(3,1fr);grid-template-areas:". up ." "left down right";gap:8px;width:100%;max-width:300px}
+.dpad .up{grid-area:up}.dpad .left{grid-area:left}.dpad .down{grid-area:down}.dpad .right{grid-area:right}
+@media (hover:hover) and (pointer:fine){.dpad{display:none}}
