@@ -136,3 +136,13 @@ footer.site{border-top:4px solid var(--purple);padding:12px 0 30px;font-size:12p
 footer.site p{margin:4px 0}
 .counter{display:inline-block;font:bold 13px "Courier New",monospace;background:#000;color:#39FF14;padding:2px 6px;letter-spacing:2px}
 .sitetitle{margin:0;font-size:inherit;line-height:0}
+
+/* Video promo box */
+.video{clear:both;margin:20px 0 4px;background:var(--lilac);padding:14px 16px;border:1px solid rgba(64,0,64,.12);font-size:14px}
+.video h2{margin:0 0 10px;font:bold 17px Arial,Helvetica,sans-serif;color:var(--plum)}
+.video p{margin:10px 0 0}
+.vthumb{position:relative;display:block;max-width:480px;line-height:0;border:3px solid #fff;outline:1px solid #bbb}
+.vthumb img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.vthumb .play{position:absolute;left:50%;top:50%;width:68px;height:48px;margin:-24px 0 0 -34px;background:#E00;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.vthumb .play::after{content:"";position:absolute;left:27px;top:14px;border-left:18px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent}
+.vthumb:hover .play{background:#C00}
