@@ -161,3 +161,24 @@ footer.site p{margin:4px 0}
 .dpad{display:grid;grid-template-columns:repeat(3,1fr);grid-template-areas:". up ." "left down right";gap:8px;width:100%;max-width:300px}
 .dpad .up{grid-area:up}.dpad .left{grid-area:left}.dpad .down{grid-area:down}.dpad .right{grid-area:right}
 @media (hover:hover) and (pointer:fine){.dpad{display:none}}
+
+.fightpad{display:flex;gap:12px;width:100%;max-width:480px;justify-content:space-between;align-items:center}
+.fp-move{display:grid;grid-template-columns:repeat(3,52px);grid-template-areas:". up ." "left down right";gap:6px}
+.fp-move .up{grid-area:up}.fp-move .left{grid-area:left}.fp-move .down{grid-area:down;font-size:10px}.fp-move .right{grid-area:right}
+.fp-act{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;flex:1 1 auto;max-width:200px}
+.fp-act .pie{grid-column:1 / span 2;background:var(--purple);color:#fff;border-color:#B48CFF}
+.fightpad .pi-btn{min-height:52px;font-size:13px}
+@media (hover:hover) and (pointer:fine){.fightpad{display:none}}
+
+/* Arcade grid */
+.gamegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:12px 0}
+@media (max-width:620px){.gamegrid{grid-template-columns:1fr}}
+.gamecard{background:var(--grey);border:1px solid rgba(64,0,64,.12);display:flex;flex-direction:column}
+.gamecard:nth-child(4n+2),.gamecard:nth-child(4n+3){background:var(--lilac)}
+.gamecard .shot{display:block;line-height:0;background:#0B0018;border-bottom:4px solid var(--purple)}
+.gamecard .shot img{width:100%;aspect-ratio:16/10;object-fit:cover;object-position:50% 55%}
+.gc-body{padding:12px 14px;display:flex;flex-direction:column;gap:6px;flex:1 1 auto}
+.gc-body h2{margin:0;font:bold 18px Arial,Helvetica,sans-serif}
+.gc-body h2 a{color:var(--plum);text-decoration:none}
+.gc-body p{margin:0;font-size:13px}
+.gc-body p:last-child{margin-top:auto;padding-top:6px}
