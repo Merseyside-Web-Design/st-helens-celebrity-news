@@ -6,8 +6,8 @@ deployment:
     - /bin/mkdir -p ${DEPLOYPATH}img
     - /bin/cp img/* ${DEPLOYPATH}img/
     - /bin/mkdir -p ${DEPLOYPATH}pie-hard
-    - /bin/cp pie-hard/* ${DEPLOYPATH}pie-hard/
-    - /bin/chmod 755 ${DEPLOYPATH}pie-hard
-    - /bin/chmod 644 ${DEPLOYPATH}pie-hard/*
+    - /bin/cp -R pie-hard/. ${DEPLOYPATH}pie-hard/
+    - /usr/bin/find ${DEPLOYPATH}pie-hard -type d -exec /bin/chmod 755 {} +
+    - /usr/bin/find ${DEPLOYPATH}pie-hard -type f -exec /bin/chmod 644 {} +
     - /bin/chmod 755 ${DEPLOYPATH}img
     - /bin/chmod 644 ${DEPLOYPATH}*.html ${DEPLOYPATH}*.css ${DEPLOYPATH}*.js ${DEPLOYPATH}*.xml ${DEPLOYPATH}*.txt ${DEPLOYPATH}img/*

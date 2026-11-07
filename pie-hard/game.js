@@ -1,6 +1,7 @@
 // PIE HARD: The Siege of Westfield Street – an SHCN original.
 // First-person food fight. Three.js, everything else built in code.
-import * as THREE from './three.module.min.js';
+import * as THREE from 'three';
+import { loadCharacters, makeCharacter } from './characters.js';
 
 // ---------------------------------------------------------------- setup
 const $ = (id) => document.getElementById(id);
@@ -283,34 +284,6 @@ const barrierObjs = BARRIERS.map((z) => {
 });
 
 // ---------------------------------------------------------------- characters
-function person(o) {
-  const g = new THREE.Group(), s = o.scale || 1;
-  const skin = lam({ color: o.skin || 0xf2c29b });
-  const mk = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return m; };
-  const legMat = lam({ color: o.legs || 0x2c3e66 }), shoe = lam({ color: o.shoes || 0x111111 });
-  const legL = new THREE.Group(), legR = new THREE.Group();
-  legL.add(mk(.22, .8, .24, legMat, 0, -.4, 0), mk(.24, .12, .34, shoe, 0, -.82, .05)); legR.add(legL.children[0].clone(), legL.children[1].clone());
-  legL.position.set(-.14, .9, 0); legR.position.set(.14, .9, 0);
-  const shirt = lam({ map: shirtTex(o.shirt || '#4466aa') });
-  const torso = mk(o.wide ? .7 : .56, .72, .32, shirt, 0, 1.28, 0);
-  const armMat = o.bareArms ? skin : lam({ color: o.sleeve || 0x333333 });
-  const armL = new THREE.Group(), armR = new THREE.Group();
-  armL.add(mk(.16, .62, .18, armMat, 0, -.3, 0), mk(.15, .14, .16, skin, 0, -.66, 0)); armR.add(armL.children[0].clone(), armL.children[1].clone());
-  const ax = (o.wide ? .7 : .56) / 2 + .09; armL.position.set(-ax, 1.6, 0); armR.position.set(ax, 1.6, 0);
-  const faceMat = lam({ map: faceTex(o.skinCss || '#f2c29b', o.face || {}) });
-  const head = new THREE.Mesh(new THREE.BoxGeometry(.42, .44, .4), [skin, skin, skin, skin, faceMat, skin]); head.position.set(0, 1.9, 0);
-  g.add(legL, legR, torso, armL, armR, head);
-  if (o.hair === 'short') g.add(mk(.44, .1, .42, lam({ color: o.hairCol || 0x3a2414 }), 0, 2.14, 0));
-  if (o.hair === 'perm') { const hm = lam({ color: 0x2a1a0e }); for (let i = 0; i < 9; i++) g.add(mk(.18, .18, .18, hm, rand(-.25, .25), 2.12 + rand(-.05, .08), rand(-.22, .18))); }
-  if (o.hair === 'long') { const hm = lam({ color: o.hairCol || 0xf2d16b }); g.add(mk(.46, .14, .44, hm, 0, 2.14, 0), mk(.46, .6, .1, hm, 0, 1.86, -.22)); }
-  if (o.hair === 'cap') { const cm = lam({ color: 0x111111 }); g.add(mk(.46, .14, .44, cm, 0, 2.16, 0), mk(.4, .04, .22, cm, 0, 2.1, .3)); }
-  if (o.veil) { const v = new THREE.Mesh(new THREE.PlaneGeometry(.7, 1.1), new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: .6, side: THREE.DoubleSide })); v.position.set(0, 1.75, -.28); g.add(v); g.add(mk(.5, .08, .1, lam({ color: 0xffffff, emissive: 0x666666 }), 0, 2.24, .05)); }
-  if (o.skirt) g.add(mk(.6, .3, .38, shirt, 0, .86, 0));
-  if (o.handbag) { const hb = mk(.28, .26, .12, lam({ color: o.handbag }), 0, -.8, .05); armR.add(hb); }
-  g.scale.setScalar(s);
-  g.userData = { legL, legR, armL, armR, head, torso };
-  return g;
-}
 
 // ---------------------------------------------------------------- audio
 let AC = null, master = null, sfxOn = true, clubGain = null, rainGain = null;
@@ -503,24 +476,20 @@ const enemies = [];
 const TYPES = {
   wiganer: { hp: 40, speed: 3.3, scale: 1, range: [6, 14], dmg: 8, cd: [1.4, 2.6], score: 100, proj: 'barm',
     quips: ['Come ere you Saint!', 'WIGAN FOREVER!', 'Get back to Thatto Heath!', 'You\'re not famous!', 'Pie eaters? Says you!', 'Have a barm!'],
-    hit: ['Ow me barm!', 'Not the shirt!', 'That\'s me Sunday best!'],
-    build: () => person({ shirt: 'hoops', legs: 0x22223a, sleeve: 0xf4f4f4, hair: Math.random() < .5 ? 'short' : 'cap', face: { angry: true, shout: Math.random() < .5 } }) },
+    hit: ['Ow me barm!', 'Not the shirt!', 'That\'s me Sunday best!'], },
   bouncer: { hp: 140, speed: 2.4, scale: 1.18, range: [0, 1.6], dmg: 16, cd: [1.1, 1.6], score: 300, melee: true,
     quips: ['Not tonight, lad.', 'Name\'s not down.', 'Not in them trainers.', 'Have you been drinking?', 'ID. Now.'],
-    hit: ['Right. That\'s it.', 'You\'re barred.', 'Oi!'],
-    build: () => person({ shirt: 'bouncer', legs: 0x111111, sleeve: 0x111111, wide: true, skin: 0xe3b08a, skinCss: '#e3b08a', face: { angry: true } }) },
+    hit: ['Right. That\'s it.', 'You\'re barred.', 'Oi!'], },
   hen: { hp: 140, speed: 4.4, scale: .95, range: [3, 10], dmg: 10, cd: [.7, 1.3], score: 600, proj: 'stiletto',
     quips: ['GET HIM GIRLS!', 'WOOOO!', 'Mind me nails!', 'SHOTS!', 'Who invited HIM?!'],
-    hit: ['Me extensions!', 'That\'s me best handbag!', 'Ow, me heels!'],
-    build: () => person({ shirt: 'hen', legs: 0xf7c6a3, bareArms: true, skirt: true, hair: 'long', hairCol: pick([0x3a2414, 0x8a3a12, 0xf2d16b, 0x111111]), skin: 0xf7c6a3, skinCss: '#f7c6a3', handbag: pick([0xb0127a, 0x111111, 0xffd400]), face: { lashes: true, blush: true, lips: '#d1124a', shout: true }, shoes: 0xd11a2a }) },
+    hit: ['Me extensions!', 'That\'s me best handbag!', 'Ow, me heels!'], },
   bride: { hp: 420, speed: 4.0, scale: 1.05, range: [2, 9], dmg: 12, cd: [.55, 1.0], score: 2000, proj: 'stiletto', boss: true,
     quips: ['IT\'S MY HEN DO!!', 'NOBODY RUINS MY HEN DO!', 'I\'M THE BRIDE!!', 'SHOTS! SHOTS! SHOTS!', 'Get him, girls!'],
-    hit: ['ME VEIL!', 'Do you know how much this cost?!', 'RIGHT!'],
-    build: () => person({ shirt: 'bride', legs: 0xf7c6a3, bareArms: true, skirt: true, hair: 'long', hairCol: 0xf2d16b, veil: true, skin: 0xf7c6a3, skinCss: '#f7c6a3', handbag: 0xffffff, face: { lashes: true, blush: true, lips: '#d1124a', shout: true, angry: true }, shoes: 0xffffff }) },
+    hit: ['ME VEIL!', 'Do you know how much this cost?!', 'RIGHT!'], },
 };
 function spawn(type, x, z, delay = 0) {
-  const T = TYPES[type], g = T.build(); g.position.set(x, 0, z); scene.add(g);
-  const e = { type, T, g, hp: T.hp, max: T.hp, scale: T.scale, cd: rand(.6, 1.6) + delay, dead: false, deadT: 0, walk: rand(0, 6), strafe: Math.random() < .5 ? 1 : -1,
+  const T = TYPES[type], c = makeCharacter(type), g = c.root; g.position.set(x, 0, z); scene.add(g);
+  const e = { type, T, g, c, hp: T.hp, max: T.hp, scale: c.scale, throwT: 0, cd: rand(.6, 1.6) + delay, dead: false, deadT: 0, walk: rand(0, 6), strafe: Math.random() < .5 ? 1 : -1,
     strafeT: rand(1, 3), sayT: 0, bubble: null, attackT: 0, hitT: 0, delay };
   g.visible = delay <= 0;
   enemies.push(e); return e;
@@ -533,10 +502,11 @@ function say(e, text) {
 function damageEnemy(e, dmg, dir) {
   if (e.dead) return;
   e.hp -= dmg; e.hitT = .15; stats.dmg += dmg;
+  if (e.hp > 0 && e.throwT <= 0 && Math.random() < .6) e.c.ctl.once(Math.random() < .5 ? 'Hit_A' : 'Hit_B', 1.6);
   if (dir) e.g.position.addScaledVector(dir.clone().setY(0).normalize(), .12);
   if (Math.random() < .2) say(e, pick(e.T.hit));
   if (e.hp <= 0) {
-    e.dead = true; e.deadT = 0; stats.kos++; score += e.T.score; SFX.ko(); hitMarker(true);
+    e.dead = true; e.deadT = 0; e.throwT = 0; e.c.ctl.once(Math.random() < .5 ? 'Death_A' : 'Death_B', 1.1, true); stats.kos++; score += e.T.score; SFX.ko(); hitMarker(true);
     killfeed(`${({ wiganer: 'Wiganer', bouncer: 'Bouncer', hen: 'Bridesmaid', bride: 'THE BRIDE' })[e.type]} splatted  +${e.T.score}`);
     if (e.bubble) { e.g.remove(e.bubble); e.bubble = null; }
     const stars = new THREE.Group(); for (let i = 0; i < 4; i++) { const s = new THREE.Mesh(new THREE.OctahedronGeometry(.08), partMats.star); s.position.set(Math.cos(i * 1.57) * .35, 2.3, Math.sin(i * 1.57) * .35); stars.add(s); }
@@ -544,7 +514,8 @@ function damageEnemy(e, dmg, dir) {
     if (Math.random() < .45) dropPickup(e.g.position.x, e.g.position.z);
   }
 }
-function enemyThrow(e) {
+function enemyThrow(e) { e.throwT = .38; e.c.ctl.once('Throw', 1.5); }
+function launchThrow(e) {
   const from = e.g.position.clone().add(new THREE.Vector3(0, 1.6 * e.scale, 0));
   const target = eyePos().add(new THREE.Vector3(rand(-.6, .6), -.4, rand(-.6, .6)));
   const kind = e.T.proj, speed = kind === 'stiletto' ? 18 : 12;
@@ -552,7 +523,6 @@ function enemyThrow(e) {
   const v = new THREE.Vector3((target.x - from.x) / t, (target.y - from.y + .5 * g * t * t) / t, (target.z - from.z) / t);
   const m = new THREE.Mesh(kind === 'stiletto' ? STIL_GEO : BARM_GEO, kind === 'stiletto' ? STIL_MAT : BARM_MAT); m.position.copy(from); scene.add(m);
   eshots.push({ m, v, g, kind, dmg: e.T.dmg, t: 4 });
-  e.attackT = .3;
 }
 function hurtPlayer(dmg, msg) {
   if (!player.alive || state.mode !== 'play') return;
@@ -641,6 +611,7 @@ function start() {
 }
 function pause() { if (state.mode !== 'play') return; state.mode = 'paused'; mouseDown = false; overlay('pause'); }
 function die() {
+  for (const e of enemies) if (!e.dead && e.delay <= 0) { e.throwT = 0; e.c.ctl.loop('Cheer'); say(e, pick(['GET IN!', 'Easy!', 'Wigan! Wigan!', 'WOOOO!'])); }
   player.alive = false; state.mode = 'dead'; mouseDown = false; document.exitPointerLock && document.exitPointerLock();
   $('ph-dead-msg').textContent = pick(['You got battered on Westfield Street.', 'Splatted. Your mam will be ashamed.', 'Knocked out cold outside the chippy.', 'Down and out before last orders.']);
   overlay('dead');
@@ -664,7 +635,12 @@ function overlay(which) {
   for (const id of ['title', 'pause', 'dead', 'won']) $('ph-' + id).hidden = id !== which;
   H.hudWrap.style.display = which ? 'none' : 'block';
 }
-$('ph-start').addEventListener('click', start);
+const startBtn = $('ph-start'), startLabel = startBtn.textContent;
+startBtn.disabled = true; startBtn.textContent = 'Loading the lads… 0%';
+loadCharacters((f) => { startBtn.textContent = `Loading the lads… ${Math.round(f * 100)}%`; })
+  .then(() => { startBtn.disabled = false; startBtn.textContent = startLabel; })
+  .catch((err) => { console.error(err); startBtn.textContent = 'Could not load the characters – refresh to try again'; });
+startBtn.addEventListener('click', start);
 $('ph-resume').addEventListener('click', start);
 $('ph-retry').addEventListener('click', start);
 $('ph-again').addEventListener('click', () => { state.mode = 'won'; start(); });
@@ -710,10 +686,11 @@ function updateEnemies(dt, t) {
   const pp = player.pos;
   let bossAlive = 0, bossHp = 0, bossMax = 0;
   for (const e of enemies) {
-    const g = e.g, u = g.userData;
+    const g = e.g, C = e.c;
+    C.material.userData.flash.value = e.hitT > 0 ? e.hitT / .15 * .55 : 0;
     if (e.delay > 0) { e.delay -= dt; if (e.delay <= 0) { g.visible = true; if (coachSpawn && e.type === 'wiganer') g.position.set(rand(.8, 1.2), 0, -166 + rand(-2, 2)); burst(g.position.clone().setY(1), 'barm', 6, 2); } continue; }
     if (e.dead) {
-      e.deadT += dt; g.rotation.x = Math.min(Math.PI / 2, e.deadT * 5) * -1; g.position.y = Math.min(.25, e.deadT);
+      e.deadT += dt; if (e.deadT < 4) C.ctl.update(dt);
       if (e.stars) e.stars.rotation.y += dt * 4;
       if (e.deadT > 5) { g.visible = false; }
       continue;
@@ -736,16 +713,17 @@ function updateEnemies(dt, t) {
     for (const c of colliders) { const cx = clamp(tmp.x, c.minX, c.maxX), cz = clamp(tmp.z, c.minZ, c.maxZ), dx = tmp.x - cx, dz = tmp.z - cz, d2 = dx * dx + dz * dz; if (d2 < .16 && d2 > 1e-6) { const d = Math.sqrt(d2); tmp.x = cx + dx / d * .4; tmp.z = cz + dz / d * .4; } }
     g.position.x = tmp.x; g.position.z = tmp.z;
     // animate
-    const sw = Math.sin(e.walk) * .7 * (mv.lengthSq() > .01 ? 1 : 0);
-    u.legL.rotation.x = sw; u.legR.rotation.x = -sw; u.armL.rotation.x = -sw * .8;
-    e.attackT -= dt; u.armR.rotation.x = e.attackT > 0 ? -2.4 : sw * .8;
-    if (e.hitT > 0) { e.hitT -= dt; g.rotation.z = Math.sin(t * 60) * .08; } else g.rotation.z = 0;
+    if (mv.lengthSq() > .01) { if (spd > 3.6) C.ctl.loop('Running_A', spd / 5.2); else C.ctl.loop('Walking_A', spd / 2.6); }
+    else C.ctl.loop('Unarmed_Idle');
+    if (e.hitT > 0) e.hitT -= dt;
+    if (e.throwT > 0) { e.throwT -= dt; if (e.throwT <= 0) launchThrow(e); }
+    if (dist < 40) C.ctl.update(dt);
     // attack
     e.cd -= dt;
     if (e.cd <= 0 && dist < (e.T.melee ? far + .6 : 26)) {
       e.cd = rand(e.T.cd[0], e.T.cd[1]);
-      if (e.T.melee) { if (dist < far + .6) { e.attackT = .35; hurtPlayer(e.T.dmg, pick(['Bouncer gave you a slap!', 'Thrown out!', 'Headlocked!'])); } }
-      else if (e.type === 'hen' || e.type === 'bride') { if (dist < 2.2) { e.attackT = .35; hurtPlayer(e.T.dmg, 'Handbagged!'); } else enemyThrow(e); }
+      if (e.T.melee) { if (dist < far + .6) { C.ctl.once(Math.random() < .7 ? 'Unarmed_Melee_Attack_Punch_A' : 'Unarmed_Melee_Attack_Kick', 1.4); hurtPlayer(e.T.dmg, pick(['Bouncer gave you a slap!', 'Thrown out!', 'Headlocked!'])); } }
+      else if (e.type === 'hen' || e.type === 'bride') { if (dist < 2.2) { C.ctl.once('Unarmed_Melee_Attack_Punch_A', 1.5); hurtPlayer(e.T.dmg, 'Handbagged!'); } else enemyThrow(e); }
       else enemyThrow(e);
     }
     if (e.sayT > 0) { e.sayT -= dt; if (e.sayT <= 0 && e.bubble) { g.remove(e.bubble); e.bubble = null; } }
@@ -812,6 +790,8 @@ function frame() {
   if (state.mode === 'play') {
     updatePlayer(dt); updateEnemies(dt, t); updateShots(dt); updateEncounters();
     if (state.mode === 'play') stats.time = (performance.now() - stats.start) / 1000;
+  } else if (state.mode === 'dead' || state.mode === 'won') {
+    for (const e of enemies) if (e.delay <= 0 && (!e.dead || e.deadT < 4)) { if (e.dead) e.deadT += dt; e.c.ctl.update(dt); }
   } else if (state.mode === 'title') {
     // slow flythrough on the title screen
     player.pos.set(Math.sin(t * .1) * 3, 0, -40 - Math.sin(t * .05) * 30); player.yaw = Math.sin(t * .13) * .5; player.pitch = .05;
