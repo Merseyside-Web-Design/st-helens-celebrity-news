@@ -182,3 +182,8 @@ footer.site p{margin:4px 0}
 .gc-body h2 a{color:var(--plum);text-decoration:none}
 .gc-body p{margin:0;font-size:13px}
 .gc-body p:last-child{margin-top:auto;padding-top:6px}
+
+.gamecard.featured{grid-column:1 / -1;background:#1a0f30;color:#fff;border:3px solid var(--purple);box-shadow:0 0 0 3px var(--orange)}
+.gamecard.featured .gc-body h2 a{color:var(--orange);font-size:26px}
+.gamecard.featured .shot img{aspect-ratio:16/9}
+.gamecard.featured .gc-body p{font-size:14px}
