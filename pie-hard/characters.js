@@ -77,7 +77,7 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 export const LOOKS = {
   wiganer: () => Math.random() < .55
     ? { base: 'Mage', hide: /Hat|Cape/, cells: { r1c0: KEY, r1c7: '#1d2340', r2c2: '#f0f0f0', r0c5: '#222222', r0c4: '#3a3a3a', r0c3: '#2a2a2a', r2c3: '#2a3553', r0c1: pick(HAIR), r0c0: pick(SKIN.slice(0, 3)) }, hoops: true }
-    : { base: 'Barbarian', hide: /Hat|Cape/, keep: /Mug/, cells: { r1c0: KEY, r1c1: KEY, r2c3: '#2a3553', r0c6: '#3a2414', r0c7: '#2a2a2a', r0c1: pick(HAIR), r0c2: pick(HAIR) }, hoops: true },
+    : { base: 'Barbarian', hide: /Hat|Cape/, keep: /Mug/, cells: { r1c0: KEY, r1c1: KEY, r2c3: '#2a3553', r0c6: KEY, r1c2: '#3a2414', r0c7: '#2a2a2a', r0c1: pick(HAIR), r0c2: pick(HAIR) }, hoops: true },
   bouncer: () => ({ base: 'Knight', hide: /Helmet|Cape/, scale: 1.14, suit: true,
     cells: { r0c3: '#2c2c30', r0c7: '#24242a', r0c6: '#1c1c20', r0c4: '#3a3a40', r1c7: '#18181c', r1c0: '#1c1c20', r1c1: '#111111', r1c2: '#2a2a2e', r0c1: pick(['#111111', '#2a1a0e', '#555555']), r0c0: pick(SKIN) } }),
   hen: () => { const top = pick(TOPS); return { base: 'Rogue', hide: /Cape/, glam: { skirt: pick(['#111111', top, '#e8e8e8', '#c8102e']), neck: '#e9a77f' }, handbag: pick(['#b0127a', '#111111', '#ffd400', '#ffffff']),
@@ -89,7 +89,23 @@ export const LOOKS = {
   mum: () => { const gown = pick(['#ff8fc8', '#8fd0ff', '#c9a0ff', '#ffb38a']); return { base: 'Rogue', hide: /Cape/, curlers: pick(['#ff4fa8', '#3fd4ff', '#ffd23f']), glam: { skirt: gown, long: true, neck: '#f2c29b', noLashes: true }, pin: true,
     cells: { r1c0: gown, r1c1: gown, r0c6: gown, r0c5: '#f4f4f4', r0c3: '#d4a017', r2c3: '#f2c29b', r1c7: '#ff8fc8', r2c5: '#f2c29b', r0c1: pick(['#8a3a12', '#d9b25a', '#5a3a22']), r0c0: '#f2c29b' } }; },
   drinker: () => { const parka = pick(['#4a5a3a', '#2a3a5a', '#5a4a2a']); return { base: 'Barbarian', hide: /Hat|Cape/, keep: /Mug/, cap: pick(['#2a2a2a', '#7a1e1e']),
-    cells: { r1c0: parka, r1c1: parka, r2c3: '#3a3a40', r0c6: '#3a2414', r0c7: '#2a2a2a', r0c1: pick(['#777777', '#aaaaaa', '#5a3a22']), r0c2: pick(['#777777', '#aaaaaa', '#5a3a22']) } }; },
+    cells: { r1c0: parka, r1c1: parka, r2c3: '#3a3a40', r0c6: parka, r1c2: '#3a2414', r0c7: '#2a2a2a', r0c1: pick(['#777777', '#aaaaaa', '#5a3a22']), r0c2: pick(['#777777', '#aaaaaa', '#5a3a22']) } }; },
+  scouser: () => { const a = pick(['#6a2ab8', '#1a6ad8', '#d81a6a', '#1aa86a']), b = pick(['#1ab8a8', '#ffd400', '#ffffff', '#ff7a1a']); return { base: 'Mage', hide: /Hat|Cape/, perm: pick(['#1a120c', '#3a2414', '#5a3a22']), tache: true,
+    cells: { r1c0: a, r1c7: b, r2c2: b, r0c5: '#f4f4f4', r0c4: b, r0c3: '#f4f4f4', r2c3: a, r0c1: '#1a120c', r0c0: pick(SKIN.slice(0, 3)) } }; },
+  roadworker: () => ({ base: 'Knight', hide: /Helmet|Cape/, scale: 1.08, hardhat: '#ffd400',
+    cells: { r0c3: '#ff7a00', r0c7: '#dcdcdc', r0c6: '#2a2a2e', r0c4: '#ffb000', r1c7: '#1a1a1e', r1c0: '#dcdcdc', r1c1: '#111111', r1c2: '#2a2a2e', r0c1: pick(['#3a2414', '#555555', '#8a3a12']), r0c0: pick(SKIN) } }),
+  warden: () => ({ base: 'Knight', hide: /Helmet|Cape/, cap: '#111114', peak: true, band: '#ffd400',
+    cells: { r0c3: '#1a1a22', r0c7: '#111116', r0c6: '#2a2a30', r0c4: '#ffd400', r1c7: '#111116', r1c0: '#ffd400', r1c1: '#111111', r1c2: '#ffd400', r0c1: pick(HAIR), r0c0: pick(SKIN) } }),
+  mp: () => ({ base: 'Knight', hide: /Helmet|Cape/, scale: 1.55, tie: true,
+    cells: { r0c3: '#7a7a8a', r0c7: '#6a6a78', r0c6: '#4a4a54', r0c4: '#8a8a98', r1c7: '#222228', r1c0: '#c8102e', r1c1: '#111111', r1c2: '#d4a017', r0c1: '#b8b8b8', r0c0: '#f0b896' } }),
+  hermit: () => { const rag = pick(['#6a5a3a', '#5a4a30', '#4a4a3a']); return { base: 'Barbarian', hide: /Hat|Cape|Mug/, beard: pick(['#9a9a9a', '#cfcfcf', '#5a4a3a']),
+    cells: { r1c0: rag, r1c1: rag, r2c3: '#4a3a2a', r0c6: rag, r1c2: '#3a2a1a', r0c7: '#2a2a2a', r0c1: '#8a8a8a', r0c2: '#8a8a8a' } }; },
+  beast: () => ({ base: 'Barbarian', hide: /Hat|Cape|Mug/, scale: 2.3, beard: '#2a1a0e', fur: true,
+    cells: { r1c0: '#3a2a1a', r1c1: '#3a2a1a', r2c3: '#2e2014', r0c6: '#4a3420', r1c2: '#3a2a1a', r2c7: '#4a3420', r1c7: '#2a1a0e', r0c7: '#2a1a0e', r0c1: '#2a1a0e', r0c2: '#2a1a0e', r0c0: '#7a5a40' } }),
+  trucker: () => ({ base: 'Barbarian', hide: /Hat|Cape|Mug/, scale: 1.15, cap: pick(['#1a3a9a', '#c8102e', '#2a2a2a']), cells: { r1c0: '#a01a1a', r1c1: '#a01a1a', r2c3: '#2a3553', r0c6: '#3a2414', r0c7: '#2a2a2a', r0c1: pick(HAIR), r0c2: pick(HAIR) } }),
+  pitman: () => ({ base: 'Knight', hide: /Helmet|Cape/, scale: 1.1, hardhat: '#ffd400', lamp: true,
+    cells: { r0c3: '#2a2c3a', r0c7: '#222430', r0c6: '#1a1c24', r0c4: '#3a3c4a', r1c7: '#1a1c24', r1c0: KEY, r1c1: '#111111', r1c2: '#e9c400', r0c1: pick(HAIR), r0c0: pick(SKIN) }, hoops: true }),
+  piebaron: () => ({ base: 'Barbarian', hide: /Hat|Cape/, keep: /Mug/, scale: 1.9, chef: true, cells: { r1c0: KEY, r1c1: KEY, r2c3: '#f4f4f4', r0c6: '#3a2414', r0c7: '#2a2a2a', r0c1: '#8a3a12', r0c2: '#8a3a12' }, hoops: true }),
   keeper: () => ({ base: 'Knight', hide: /Helmet|Cape/, scale: 1.1, cap: '#1f3a22', peak: true,
     cells: { r0c3: '#2a4a2c', r0c7: '#1f3a22', r0c6: '#1a2a1c', r0c4: '#3a5a3c', r1c7: '#1a2a1c', r1c0: '#e9c400', r1c1: '#111111', r1c2: '#e9c400', r0c1: pick(['#555555', '#888888', '#2a1a0e']), r0c0: pick(SKIN) } }),
 };
@@ -128,9 +144,15 @@ export function makeCharacter(type) {
   }
   if (look.suit && chest) addSuit(chest);
   if (look.glam && chest && hips && head) addGlam(chest, hips, head, look.glam);
-  if (look.cap && head) addCap(head, look.cap, look.peak);
+  if (look.cap && head) addCap(head, look.cap, look.peak, look.band);
+  if (look.perm && head) addPerm(head, look.perm);
+  if (look.tache && head) addTache(head);
+  if (look.hardhat && head) addHardHat(head, look.hardhat, look.lamp);
+  if (look.beard && head) addBeard(head, look.beard, look.fur);
+  if (look.tie && chest) addTie(chest);
   if (look.curlers && head) addCurlers(head, look.curlers);
   if (look.pin && handR) addPin(handR);
+  if (look.chef && head) addChef(head);
   const s = (look.scale || 1) * .92;
   root.scale.setScalar(s);
   const mixer = new THREE.AnimationMixer(root);
@@ -195,8 +217,9 @@ function addGlam(chest, hips, head, g) {
   }
 }
 
-function addCap(head, col, peak) {
+function addCap(head, col, peak, band) {
   const m = new THREE.MeshLambertMaterial({ color: col });
+  if (band) { const b = new THREE.Mesh(new THREE.CylinderGeometry(.61, .61, .12, 18, 1, true), new THREE.MeshLambertMaterial({ color: band, side: THREE.DoubleSide })); b.position.set(0, .56, -.02); head.add(b); }
   const dome = new THREE.Mesh(new THREE.SphereGeometry(.6, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), m);
   dome.scale.set(1, .7, 1.02); dome.position.set(0, .5, -.02); head.add(dome);
   const brim = new THREE.Mesh(new THREE.CylinderGeometry(.34, .34, .04, 16, 1, false, -Math.PI / 2, Math.PI), m);
@@ -210,4 +233,36 @@ function addCurlers(head, col) {
 function addPin(hand) {
   const pin = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, .7, 10), new THREE.MeshLambertMaterial({ color: 0xc89a5a }));
   pin.rotation.z = Math.PI / 2; pin.position.set(0, .05, .1); hand.add(pin);
+}
+
+function addPerm(head, col) {
+  const m = new THREE.MeshLambertMaterial({ color: col });
+  for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; const r = i % 2 ? .42 : .3;
+    const b = new THREE.Mesh(new THREE.IcosahedronGeometry(.2, 0), m); b.position.set(Math.cos(a) * r, .78 + (i % 3) * .06, Math.sin(a) * r - .08); head.add(b); }
+  const top = new THREE.Mesh(new THREE.IcosahedronGeometry(.3, 0), m); top.position.set(0, .9, -.05); head.add(top);
+}
+function addTache(head) { const t = new THREE.Mesh(new THREE.BoxGeometry(.34, .07, .08), new THREE.MeshLambertMaterial({ color: 0x1a120c })); t.position.set(0, .1, .52); head.add(t); }
+function addHardHat(head, col, lamp) {
+  const m = new THREE.MeshLambertMaterial({ color: col });
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(.6, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), m); dome.scale.set(1, .75, 1.05); dome.position.set(0, .52, -.02); head.add(dome);
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(.72, .72, .05, 18), m); rim.position.set(0, .53, .02); head.add(rim);
+  if (lamp) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.09, .09, .1, 10), new THREE.MeshBasicMaterial({ color: 0xfff4c0 })); l.scale.setScalar(.6); l.rotation.x = Math.PI / 2; l.position.set(0, .74, .52); head.add(l); }
+}
+function addBeard(head, col, fur) {
+  const m = new THREE.MeshLambertMaterial({ color: col });
+  const b = new THREE.Mesh(new THREE.ConeGeometry(fur ? .5 : .36, fur ? .8 : .75, 7), m); b.rotation.x = Math.PI; b.position.set(0, -.2, .36); head.add(b);
+  if (fur) for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; const h = new THREE.Mesh(new THREE.ConeGeometry(.16, .5, 5), m); h.position.set(Math.cos(a) * .45, .75, Math.sin(a) * .4 - .05); h.rotation.set(Math.sin(a) * .5, 0, -Math.cos(a) * .5); head.add(h); }
+}
+function addTie(chest) {
+  const shirt = new THREE.Mesh(tri(.3, .34), lam(0xf4f4f4, { emissive: 0x333333 })); shirt.position.set(0, .12, .335); shirt.rotation.x = -.32; chest.add(shirt);
+  const tie = new THREE.Mesh(new THREE.BoxGeometry(.07, .3, .02), lam(0xc8102e, { polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); tie.position.set(0, .1, .35); tie.rotation.x = -.32; chest.add(tie);
+  const ros = new THREE.Mesh(new THREE.CylinderGeometry(.1, .1, .03, 12), lam(0xc8102e)); ros.rotation.x = Math.PI / 2 - .32; ros.position.set(.2, .18, .33); chest.add(ros);
+  const rc = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .04, 10), lam(0xffd400)); rc.rotation.x = Math.PI / 2 - .32; rc.position.set(.2, .18, .345); chest.add(rc);
+}
+
+function addChef(head) {
+  const m = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x444444 });
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .5, 16), m); band.position.set(0, .75, -.02); head.add(band);
+  for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; const puff = new THREE.Mesh(new THREE.SphereGeometry(.32, 10, 8), m); puff.position.set(Math.cos(a) * .25, 1.12, Math.sin(a) * .25); head.add(puff); }
+  const top = new THREE.Mesh(new THREE.SphereGeometry(.36, 10, 8), m); top.position.set(0, 1.25, 0); head.add(top);
 }

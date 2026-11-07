@@ -118,3 +118,34 @@ export function makeGoose(kind = 'goose') {
   };
   return { root, ctl, material: flashFor(mats), scale: S, creature: true };
 }
+
+// ------------------------------------------------------------------ bats (Crank Caverns)
+export function makeBat() {
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const mFur = shell(0x2a1a1a), mWing = new THREE.MeshLambertMaterial({ color: 0x3a2020, side: THREE.DoubleSide }); mWing.userData.baseE = 0;
+  const mats = [mFur, mWing];
+  body.add(ball(.22, mFur, 1, 1.1, 1.2));
+  const head = ball(.15, mFur); head.position.set(0, .12, .22); body.add(head);
+  for (const s of [-1, 1]) { const ear = new THREE.Mesh(new THREE.ConeGeometry(.06, .18, 4), mFur); ear.position.set(s * .08, .3, .2); body.add(ear);
+    const e = ball(.035, new THREE.MeshBasicMaterial({ color: 0xff3a1a })); e.position.set(s * .07, .15, .35); body.add(e); }
+  const wings = [];
+  for (const s of [-1, 1]) {
+    const piv = new THREE.Group(); piv.position.set(s * .15, .05, 0); body.add(piv);
+    const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(s * .5, .25); sh.lineTo(s * 1.1, .1); sh.lineTo(s * .95, -.15); sh.lineTo(s * .7, -.05); sh.lineTo(s * .5, -.25); sh.lineTo(s * .3, -.08); sh.lineTo(0, -.2);
+    const w = new THREE.Mesh(new THREE.ShapeGeometry(sh), mWing); w.rotation.x = -Math.PI / 2; piv.add(w); wings.push({ piv, s });
+  }
+  const S = 1.3; root.scale.setScalar(S);
+  const ctl = {
+    t: Math.random() * 6, lunge: 0, dead: 0, deadT: 0, hit: 0,
+    loop() {}, once(n) { if (this.dead) return; if (/Death/.test(n)) this.dead = 1; else if (/Hit/.test(n)) this.hit = .3; else this.lunge = .5; },
+    update(dt) {
+      this.t += dt;
+      if (this.dead) { this.deadT += dt; body.position.y = Math.max(.15, body.position.y - dt * 4); body.rotation.z = Math.min(Math.PI, this.deadT * 6); wings.forEach((w) => w.piv.rotation.z = 0); return; }
+      const fl = Math.sin(this.t * 22); wings.forEach((w) => w.piv.rotation.z = w.s * fl * .9);
+      let y = 1.55 + Math.sin(this.t * 2.3) * .2;
+      if (this.lunge > 0) { this.lunge -= dt; const k = Math.sin((1 - this.lunge / .5) * Math.PI); y -= k * .35; body.position.z = k * .5; } else body.position.z *= .9;
+      body.position.y = y; body.rotation.z = this.hit > 0 ? Math.sin((this.hit -= dt) * 50) * .4 : Math.sin(this.t * 1.7) * .15;
+    },
+  };
+  return { root, ctl, material: flashFor(mats), scale: S, creature: true };
+}

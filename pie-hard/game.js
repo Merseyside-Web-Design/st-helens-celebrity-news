@@ -2,7 +2,7 @@
 // First-person food fight. Three.js, everything else built in code.
 import * as THREE from 'three';
 import { loadCharacters, makeCharacter } from './characters.js';
-import { makeAnt, makeGoose } from './creatures.js';
+import { makeAnt, makeGoose, makeBat } from './creatures.js';
 
 // ---------------------------------------------------------------- setup
 const $ = (id) => document.getElementById(id);
@@ -26,7 +26,7 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const STORE = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
                 set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
-const LEVEL_N = clamp(parseInt(new URLSearchParams(location.search).get('level'), 10) || 1, 1, 3);
+const LEVEL_N = clamp(parseInt(new URLSearchParams(location.search).get('level'), 10) || 1, 1, 5);
 
 // ---------------------------------------------------------------- textures
 function canvasTex(w, h, draw, repeat) {
@@ -303,7 +303,7 @@ function milkFloat(x, z) {
   for (let i = 0; i < 6; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(.5, .35, .5), PARR.crate); c.position.set(-.5 + (i % 2), 1, -1.8 + Math.floor(i / 2) * .7); g.add(c);
     for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, .3, 6), PARR.milk); m.position.set(c.position.x - .12 + (k % 2) * .24, 1.3, c.position.z - .12 + (k >> 1) * .24); g.add(m); } }
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.6, .6), lam({ map: shopTex('MILK', '#1a7a3a', 'dark'), emissive: 0xffffff, emissiveIntensity: .4 })); sign.material.emissiveMap = sign.material.map;
-  sign.position.set(-.96, 1.9, -.6); sign.rotation.y = -Math.PI / 2; g.add(sign);
+  sign.position.set(.96, 1.9, -.6); sign.rotation.y = Math.PI / 2; g.add(sign);
   for (const wx of [-.95, .95]) for (const wz of [-1.4, 1.4]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .2, 12), PROPMAT.tyre); w.rotation.z = Math.PI / 2; w.position.set(wx, .3, wz); g.add(w); }
   g.position.set(x, 0, z); g.rotation.y = -Math.PI / 2; scene.add(g); return g;
 }
@@ -430,7 +430,171 @@ function buildPark() {
   const stopGlow = new THREE.Sprite(glowMat('#7cff4f')); stopGlow.position.set(0, 4.5, END_Z - 10); stopGlow.scale.set(10, 3, 1); scene.add(stopGlow);
 }
 
-({ 1: buildStreet, 2: buildParr, 3: buildPark })[LEVEL_N]();
+
+// ---------------------------------------------------------------- level 4: the East Lancs (A580)
+const LANCS = { conc: lam({ color: 0x6a6870 }), steel: lam({ color: 0x9a9aa4 }), verge: lam({ map: groundTex('#1c3018', '100,140,80', [4, 40]) }), sign: lam({ color: 0x1a4a2a }),
+  van: lam({ color: 0xf0f0f0 }), vanTrim: lam({ color: 0xc8102e }), hatch: lam({ color: 0xffd479, emissive: 0xffb050, emissiveIntensity: .8 }) };
+function signTex(lines) {
+  return canvasTex(512, 256, (g, w, h) => { g.fillStyle = '#0e5a2c'; g.fillRect(0, 0, w, h); g.strokeStyle = '#fff'; g.lineWidth = 8; g.strokeRect(10, 10, w - 20, h - 20);
+    g.fillStyle = '#ffd400'; g.fillRect(28, 28, 120, 56); g.fillStyle = '#111'; g.font = 'bold 40px Arial'; g.fillText('A580', 36, 72);
+    g.fillStyle = '#fff'; g.font = 'bold 44px Arial'; lines.forEach((t, i) => g.fillText(t, 40, 140 + i * 56)); });
+}
+function buildLancs() {
+  scene.background.set(0x0a0a1a); scene.fog.color.set(0x16182c); scene.fog.density = .016;
+  hemi.color.set(0x8a8ab8); hemi.intensity = 1.6; ambient.intensity = 1.1;
+  const roadTex = canvasTex(512, 256, (g, w, h) => { g.fillStyle = '#2c2a30'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 3000; i++) { g.fillStyle = `rgba(140,140,150,${rand(.05, .2)})`; g.fillRect(rand(0, w), rand(0, h), 2, 2); }
+    g.fillStyle = '#e8e8e8'; for (const x of [.27, .73]) for (let y = 0; y < h; y += 128) g.fillRect(x * w - 4, y, 8, 70);
+    g.fillStyle = '#e8c400'; g.fillRect(.035 * w, 0, 6, h); g.fillRect(.965 * w - 6, 0, 6, h);
+    g.fillStyle = '#e8e8e8'; g.fillRect(.455 * w, 0, 6, h); g.fillRect(.545 * w - 6, 0, 6, h); }, [1, 30]);
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(19, 240), lam({ map: roadTex })); road.rotation.x = -Math.PI / 2; road.position.set(0, 0, -112); scene.add(road);
+  // central reservation: grass strip and crash barriers (low enough to hop over)
+  const res = new THREE.Mesh(new THREE.BoxGeometry(1.6, .1, 240), LANCS.verge); res.position.set(0, .05, -112); scene.add(res);
+  for (const x of [-.85, .85]) { const b = new THREE.Mesh(new THREE.BoxGeometry(.08, .3, 240), LANCS.steel); b.position.set(x, .45, -112); scene.add(b);
+    for (let z = 4; z > -228; z -= 4) { const p = new THREE.Mesh(new THREE.BoxGeometry(.08, .5, .08), LANCS.steel); p.position.set(x, .25, z); scene.add(p); } }
+  // verges, outer barriers, embankments, trees
+  for (const sx of [-1, 1]) {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(.1, .35, 240), LANCS.steel); b.position.set(sx * 9.75, .5, -112); scene.add(b);
+    const v = new THREE.Mesh(new THREE.BoxGeometry(14, .1, 240), LANCS.verge); v.position.set(sx * 17, 1.4, -112); v.rotation.z = -sx * .2; scene.add(v);
+    for (let z = 0; z > -232; z -= 6) tree(sx * rand(16, 24), z + rand(-2, 2), rand(1.1, 1.6), false);
+  }
+  // tall lights on the central reservation
+  for (let z = -6; z > -226; z -= 26) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(.1, .16, 9, 8), lampMat); post.position.set(0, 4.5, z); scene.add(post);
+    for (const sx of [-1, 1]) { const arm = new THREE.Mesh(new THREE.BoxGeometry(2.2, .1, .1), lampMat); arm.position.set(sx * 1.1, 8.9, z); scene.add(arm);
+      const head = new THREE.Mesh(new THREE.BoxGeometry(.8, .18, .35), lampHead); head.position.set(sx * 2.1, 8.8, z); scene.add(head);
+      const pool = new THREE.Sprite(glowMat('#ffb060')); pool.position.set(sx * 2.1, 8.7, z); pool.scale.set(2.6, 1.4, 1); scene.add(pool);
+      lampSpots.push({ pos: new THREE.Vector3(sx * 3, 8, z) }); }
+    addCollider(0, z, .4, .4);
+  }
+  // gantry sign
+  for (const sx of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(.4, 7, .4), LANCS.steel); leg.position.set(sx * 10.2, 3.5, -38); scene.add(leg); }
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(21, .5, .5), LANCS.steel); beam.position.set(0, 7, -38); scene.add(beam);
+  for (const [x, lines] of [[-5, ['ST HELENS', 'Liverpool (M57)']], [5, ['Billinge', 'Manchester (M60)']]]) {
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(7, 3.5), lam({ map: signTex(lines), emissive: 0xffffff, emissiveIntensity: .25, side: THREE.DoubleSide })); s.material.emissiveMap = s.material.map; s.position.set(x, 5.6, -37.7); scene.add(s); }
+  // footbridge
+  for (const sx of [-1, 1]) { const t = new THREE.Mesh(new THREE.BoxGeometry(2.4, 6.4, 3), LANCS.conc); t.position.set(sx * 11.6, 3.2, -104); scene.add(t); }
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(22, .5, 2.4), LANCS.conc); deck.position.set(0, 6.4, -104); scene.add(deck);
+  for (const z of [-102.9, -105.1]) { const r = new THREE.Mesh(new THREE.BoxGeometry(22, 1, .08), LANCS.steel); r.position.set(0, 7.1, z); scene.add(r); }
+  // road bridge with pillars (cover!)
+  const rb = new THREE.Mesh(new THREE.BoxGeometry(40, 1.4, 9), LANCS.conc); rb.position.set(0, 7.6, -182); scene.add(rb);
+  for (const x of [-10.4, 0, 10.4]) { const p = new THREE.Mesh(new THREE.BoxGeometry(x ? 1.2 : 1, 7, 6), LANCS.conc); p.position.set(x, 3.5, -182); scene.add(p); if (!x) addCollider(0, -182, 1.2, 6.2); }
+  neonSpots.push({ pos: new THREE.Vector3(0, 5, -182), color: new THREE.Color(0xffc070), flick: false });
+  // Big Mick's butty van in the lay-by
+  const vg = new THREE.Group();
+  const vb = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.4, 5), LANCS.van); vb.position.y = 1.5; vg.add(vb);
+  const vt = new THREE.Mesh(new THREE.BoxGeometry(2.24, .3, 5.04), LANCS.vanTrim); vt.position.y = 1.0; vg.add(vt);
+  const hatch = new THREE.Mesh(new THREE.PlaneGeometry(3, 1), LANCS.hatch); hatch.position.set(-1.12, 1.9, 0); hatch.rotation.y = -Math.PI / 2; vg.add(hatch);
+  const vs = new THREE.Mesh(new THREE.PlaneGeometry(4.6, .8), lam({ map: shopTex("BIG MICK'S BUTTIES", '#ffb13b', 'dark'), emissive: 0xffffff, emissiveIntensity: .6 })); vs.material.emissiveMap = vs.material.map; vs.position.set(-1.13, 2.95, 0); vs.rotation.y = -Math.PI / 2; vg.add(vs);
+  for (const wz of [-1.6, 1.6]) for (const wx of [-1, 1]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.38, .38, .25, 12), PROPMAT.tyre); w.rotation.z = Math.PI / 2; w.position.set(wx, .38, wz); vg.add(w); }
+  vg.position.set(9.4, 0, -68); scene.add(vg); addCollider(9.4, -68, 2.4, 5.2);
+  neonSpots.push({ pos: new THREE.Vector3(7.5, 2.6, -68), color: new THREE.Color(0xffb13b), flick: false });
+  // broken-down N1 bus behind you, cones, debris
+  for (let i = 0; i < 18; i++) cone(rand(-8.5, 8.5), rand(-215, -10));
+  for (let i = 0; i < 40; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(rand(.1, .3), .05, rand(.1, .3)), pick([PROPMAT.metal, PROPMAT.tyre])); m.position.set(rand(-9, 9), .05, rand(-224, 2)); m.rotation.y = rand(0, 6); scene.add(m); }
+  endWall(END_Z - 1, 'BILLINGE'); endWall(START_Z + 3, null);
+}
+// traffic: cars that hurt anyone stood in a live lane
+const cars = [];
+const CAR_COLS = [0xc8102e, 0x1a3a9a, 0xe8e8e8, 0x2a2a2a, 0xe8c400, 0x2a7a3a, 0x8a8a94, 0xff7a1a];
+function makeTraffic() {
+  const lanes = [[-6.6, 1], [-2.7, 1], [2.7, -1], [6.6, -1]];      // +1 drives toward the start (at you), -1 comes up behind you
+  for (let i = 0; i < 8; i++) {
+    const [x, dir] = lanes[i % 4], g = new THREE.Group(), col = lam({ color: pick(CAR_COLS) });
+    const b = new THREE.Mesh(new THREE.BoxGeometry(1.8, .7, 4), col); b.position.y = .6; g.add(b);
+    const c = new THREE.Mesh(new THREE.BoxGeometry(1.6, .6, 2), PROPMAT.taxiGlass); c.position.set(0, 1.2, -.2); g.add(c);
+    for (const wx of [-.9, .9]) for (const wz of [-1.3, 1.3]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.32, .32, .22, 10), PROPMAT.tyre); w.rotation.z = Math.PI / 2; w.position.set(wx, .32, wz); g.add(w); }
+    for (const wx of [-.6, .6]) { const hl = new THREE.Sprite(glowMat('#fff6d0')); hl.position.set(wx, .65, 2.05); hl.scale.set(1.4, .9, 1); g.add(hl);
+      const tl = new THREE.Sprite(glowMat('#ff2a2a')); tl.position.set(wx, .65, -2.05); tl.scale.set(.8, .5, 1); g.add(tl); }
+    g.rotation.y = dir > 0 ? 0 : Math.PI; scene.add(g);
+    cars.push({ g, x, dir, speed: rand(15, 22), z: 0, wait: i * 2.7 + rand(0, 2), honked: false });
+    g.visible = false;
+  }
+}
+function lorry(x, z) {
+  const g = new THREE.Group();
+  const box = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3, 7), lam({ color: 0xe8e8e8 })); box.position.set(0, 2.1, -1.2); g.add(box);
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.4, 2), lam({ color: 0x1a3a9a })); cab.position.set(0, 1.8, 3.4); g.add(cab);
+  const ws = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 1), PROPMAT.taxiGlass); ws.position.set(0, 2.3, 4.41); g.add(ws);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.2), lam({ map: shopTex('SHCN DELIVERIES', '#c8102e', 'dark'), emissive: 0xffffff, emissiveIntensity: .3 })); sign.material.emissiveMap = sign.material.map; sign.position.set(1.26, 2.4, -1.2); sign.rotation.y = Math.PI / 2; g.add(sign);
+  for (const wz of [-3.6, -2.4, 3.4]) for (const wx of [-1.2, 1.2]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .3, 12), PROPMAT.tyre); w.rotation.z = Math.PI / 2; w.position.set(wx, .5, wz); g.add(w); }
+  g.position.set(x, 0, z); g.rotation.y = -Math.PI / 2; scene.add(g); return g;
+}
+function updateTraffic(dt) {
+  if (!cars.length) return;
+  const rush = state.enc >= 3 ? 1.3 : 1; if (player.carT > 0) player.carT -= dt;
+  for (const c of cars) {
+    if (c.wait > 0) { c.wait -= dt; if (c.wait <= 0) { c.z = c.dir > 0 ? END_Z - 6 : START_Z + 6; c.g.visible = true; c.honked = false; c.speed = rand(15, 22) * rush; } continue; }
+    c.z += c.dir * c.speed * dt; c.g.position.set(c.x, 0, c.z);
+    if ((c.dir > 0 && c.z > START_Z + 8) || (c.dir < 0 && c.z < END_Z - 8)) { c.g.visible = false; c.wait = rand(1.5, 5) / rush; continue; }
+    const px = player.pos.x, pz = player.pos.z;
+    if (!c.honked && Math.abs(px - c.x) < 1.6 && (pz - c.z) * c.dir > 0 && (pz - c.z) * c.dir < 22) { c.honked = true; SFX.horn(); }
+    if (player.alive && !(player.carT > 0) && Math.abs(px - c.x) < 1.25 && Math.abs(pz - c.z) < 2.4 && player.pos.y < .9) {
+      hurtPlayer(26, pick(['Hit by a Vauxhall Nova!', 'Run over on the East Lancs!', 'Flattened by a Transit!', 'Bonnet to the shins!']));
+      player.carT = 1.2; player.vel.x += (px >= c.x ? 1 : -1) * 9; player.vel.y = 4; player.onGround = false; shake = .6;
+    }
+    for (const e of enemies) if (!e.dead && e.delay <= 0 && Math.abs(e.g.position.x - c.x) < 1.3 && Math.abs(e.g.position.z - c.z) < 2.4) { damageEnemy(e, 9999, new THREE.Vector3(0, 0, c.dir)); toast(`${NAMES[e.type]} got run over!`); }
+  }
+}
+
+// ---------------------------------------------------------------- level 5: Crank Caverns
+const CAVE = { rock: lam({ map: groundTex('#8a4a2a', '60,30,20', [2, 2]) }), rock2: lam({ map: groundTex('#6a3a22', '40,20,10', [2, 2]) }), floor: lam({ map: groundTex('#5a3a28', '30,20,10', [8, 40]) }),
+  wood: lam({ color: 0x5a3a20 }), rail: lam({ color: 0x6a6a74 }), cart: lam({ color: 0x3a3a40 }), pie: lam({ color: 0xd9a441 }), crate: lam({ color: 0x8a6a3a }),
+  oven: lam({ color: 0x2a2a2e }), ovenGlow: new THREE.MeshBasicMaterial({ color: 0xff7a1a }), shroom: new THREE.MeshBasicMaterial({ color: 0x3affe0 }), lantern: new THREE.MeshBasicMaterial({ color: 0xffc46b }) };
+function rock(x, y, z, r, mat = CAVE.rock) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mat); m.position.set(x, y, z); m.rotation.set(rand(0, 3), rand(0, 3), rand(0, 3)); m.scale.set(1, rand(.7, 1.3), 1); scene.add(m); return m; }
+function pieCrate(x, z, n = 2) {
+  for (let i = 0; i < n; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(1.1, .8, 1.1), CAVE.crate); c.position.set(x, .4 + i * .8, z); c.rotation.y = rand(-.2, .2); scene.add(c); }
+  const lab = new THREE.Mesh(new THREE.PlaneGeometry(1, .5), lam({ map: shopTex('WIGAN PIE CO', '#ffffff', 'dark') })); lab.position.set(x, .45, z + .56); scene.add(lab);
+  addCollider(x, z, 1.2, 1.2);
+}
+function lantern(x, z) {
+  const post = new THREE.Mesh(new THREE.BoxGeometry(.15, 3, .15), CAVE.wood); post.position.set(x, 1.5, z); scene.add(post);
+  const l = new THREE.Mesh(new THREE.BoxGeometry(.3, .4, .3), CAVE.lantern); l.position.set(x, 3.1, z); scene.add(l);
+  const gl = new THREE.Sprite(glowMat('#ffb050')); gl.position.set(x, 3.1, z); gl.scale.set(2.6, 2, 1); scene.add(gl);
+  lampSpots.push({ pos: new THREE.Vector3(x, 3, z) }); addCollider(x, z, .3, .3);
+}
+function buildCaves() {
+  scene.background.set(0x030201); scene.fog.color.set(0x140a06); scene.fog.density = .03;
+  hemi.color.set(0xb07a50); hemi.groundColor.set(0x2a1408); hemi.intensity = 1.4; ambient.color.set(0x4a2a1a); ambient.intensity = 1.0; moon.intensity = 0;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 250), CAVE.floor); floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -112); scene.add(floor);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(30, 250), CAVE.rock2); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 9.5, -112); scene.add(ceil);
+  // walls of tumbled sandstone
+  for (const sx of [-1, 1]) for (let z = 8; z > -236; z -= 3.2) { rock(sx * rand(11.5, 13), rand(1, 3), z, rand(2.4, 3.4)); rock(sx * rand(12, 14), rand(5, 8), z + 1.5, rand(2.4, 3.4), CAVE.rock2); }
+  for (let x = -12; x <= 12; x += 3.4) { rock(x, rand(1, 4), -236, 3.2); rock(x, rand(5, 8.5), -237, 3.2, CAVE.rock2); rock(x, rand(1, 5), 11, 3.2); }
+  // stalactites and stalagmites
+  for (let i = 0; i < 70; i++) { const s = new THREE.Mesh(new THREE.ConeGeometry(rand(.2, .5), rand(1, 3), 6), pick([CAVE.rock, CAVE.rock2])); s.rotation.x = Math.PI; s.position.set(rand(-10, 10), 9.5 - s.geometry.parameters.height / 2, rand(-230, 6)); scene.add(s); }
+  [[-6, -24], [6.5, -48], [-5.5, -82], [5, -120], [-7, -138], [6, -164], [-4.5, -206]].forEach(([x, z]) => { const h = rand(2.4, 3.6), s = new THREE.Mesh(new THREE.ConeGeometry(.9, h, 7), CAVE.rock); s.position.set(x, h / 2, z); scene.add(s); addCollider(x, z, 1.4, 1.4); });
+  // pit railway and carts of pies
+  for (const x of [-3.4, -2.4]) { const r = new THREE.Mesh(new THREE.BoxGeometry(.1, .1, 236), CAVE.rail); r.position.set(x, .05, -112); scene.add(r); }
+  for (let z = 6; z > -228; z -= 1.2) { const s = new THREE.Mesh(new THREE.BoxGeometry(1.6, .06, .25), CAVE.wood); s.position.set(-2.9, .03, z); scene.add(s); }
+  for (const z of [-36, -92, -150]) { const c = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1, 2.2), CAVE.cart); c.position.set(-2.9, .75, z); scene.add(c);
+    for (let k = 0; k < 6; k++) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.2, .16, .1, 10), CAVE.pie); p.position.set(-2.9 + rand(-.45, .45), 1.3, z + rand(-.8, .8)); scene.add(p); }
+    addCollider(-2.9, z, 1.5, 2.3); }
+  [[7, -14], [-7.5, -58], [7.5, -100], [-7, -122], [7.6, -142]].forEach(([x, z]) => pieCrate(x, z, Math.random() < .5 ? 2 : 1));
+  // the pie factory: ovens and a conveyor
+  for (const [x, z] of [[-7.6, -170], [7.6, -176], [-7.6, -192], [7.6, -198]]) {
+    const o = new THREE.Mesh(new THREE.BoxGeometry(2.6, 3, 3), CAVE.oven); o.position.set(x, 1.5, z); scene.add(o);
+    const d = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1), CAVE.ovenGlow); d.position.set(x - Math.sign(x) * 1.31, 1.4, z); d.rotation.y = -Math.sign(x) * Math.PI / 2; scene.add(d);
+    neonSpots.push({ pos: new THREE.Vector3(x - Math.sign(x) * 2, 1.6, z), color: new THREE.Color(0xff7a1a), flick: true }); addCollider(x, z, 2.7, 3.1);
+  }
+  const belt = new THREE.Mesh(new THREE.BoxGeometry(1.2, .8, 26), CAVE.cart); belt.position.set(4, .4, -186); scene.add(belt); addCollider(4, -186, 1.3, 26);
+  for (let z = -174; z > -199; z -= 1.3) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.22, .18, .1, 10), CAVE.pie); p.position.set(4, .86, z); scene.add(p); }
+  const banner2 = new THREE.Mesh(new THREE.PlaneGeometry(8, 1.4), lam({ map: shopTex('WIGAN PIE CO – SECRET HQ', '#ffd479', 'dark'), emissive: 0xffffff, emissiveIntensity: .4 })); banner2.material.emissiveMap = banner2.material.map; banner2.position.set(0, 6.5, -168); scene.add(banner2);
+  // glowing cave mushrooms
+  for (let i = 0; i < 26; i++) { const sx = Math.random() < .5 ? -1 : 1, m = new THREE.Mesh(new THREE.SphereGeometry(rand(.1, .25), 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), CAVE.shroom); m.position.set(sx * rand(8.6, 9.6), 0, rand(-228, 4)); scene.add(m); }
+  for (let z = -40; z > -228; z -= 50) neonSpots.push({ pos: new THREE.Vector3(-9, 1, z), color: new THREE.Color(0x3affe0), flick: false });
+  for (let z = -6; z > -226; z -= 18) { lantern(-9, z); lantern(9, z - 9); }
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(5, 1.2), lam({ map: shopTex('CRANK CAVERNS', '#ffd479', 'dark'), emissive: 0xffffff, emissiveIntensity: .3, side: THREE.DoubleSide })); sign.material.emissiveMap = sign.material.map; sign.position.set(0, 5, 4); scene.add(sign);
+}
+function daylight() {
+  const g = new THREE.Group();
+  const hole = new THREE.Mesh(new THREE.CircleGeometry(3.4, 20), new THREE.MeshBasicMaterial({ color: 0xfff6dc, fog: false })); hole.position.set(0, 3.4, -232); g.add(hole);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowMat('#fff2c0').map, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })); glow.position.set(0, 3.4, -230); glow.scale.set(18, 12, 1); g.add(glow);
+  const L = new THREE.PointLight(0xfff2c0, 30, 40, 1.2); L.position.set(0, 4, -226); g.add(L);
+  scene.add(g); return g;
+}
+
+({ 1: buildStreet, 2: buildParr, 3: buildPark, 4: buildLancs, 5: buildCaves })[LEVEL_N]();
 
 // rain
 const RAIN = 1400, rainGeo = new THREE.BufferGeometry(), rainPos = new Float32Array(RAIN * 3);
@@ -455,6 +619,8 @@ function mergeStatic() {
   }
 }
 mergeStatic();
+if (LEVEL_N === 4) makeTraffic();
+if (LEVEL_N === 5) rain.visible = false;
 
 // progression barriers (crowd barriers that drop when an area is cleared)
 const BARRIERS = [-56, -101, -146, -187];
@@ -479,7 +645,7 @@ function audio() {
     const len = AC.sampleRate * 2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     const src = AC.createBufferSource(); src.buffer = buf; src.loop = true;
-    const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2500; rainGain = AC.createGain(); rainGain.gain.value = .05;
+    const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2500; rainGain = AC.createGain(); rainGain.gain.value = LEVEL_N === 5 ? 0 : .05;
     src.connect(f); f.connect(rainGain); rainGain.connect(master); src.start();
     // club thump
     clubGain = AC.createGain(); clubGain.gain.value = 0; clubGain.connect(master);
@@ -514,7 +680,7 @@ const SFX = {
   pickup: () => { tone(660, .08, 'square', .1); setTimeout(() => tone(990, .12, 'square', .1), 70); }, boom: () => { noise(.7, 400, 'lowpass', 1.2, 60); tone(70, .6, 'sine', .4, 30); },
   ko: () => { tone(400, .1, 'square', .08); setTimeout(() => tone(300, .1, 'square', .08), 90); setTimeout(() => tone(200, .25, 'square', .08), 180); },
   click: () => tone(1200, .03, 'square', .05), honk: (big) => { tone(big ? 210 : 330, .22, 'sawtooth', .16, big ? 150 : 250); setTimeout(() => tone(big ? 190 : 300, .18, 'sawtooth', .14, big ? 130 : 220), 160); },
-  hiss: () => noise(.3, 3500, 'highpass', .35), wave: () => { tone(330, .15, 'square', .1); setTimeout(() => tone(440, .25, 'square', .1), 150); },
+  hiss: () => noise(.3, 3500, 'highpass', .35), horn: () => { tone(392, .35, 'square', .09); tone(494, .35, 'square', .07); }, screech: () => { tone(1800, .15, 'sine', .06, 2600); }, wave: () => { tone(330, .15, 'square', .1); setTimeout(() => tone(440, .25, 'square', .1), 150); },
 };
 
 // ---------------------------------------------------------------- player + weapons
@@ -586,6 +752,12 @@ const PROJ = {
   stiletto: { geo: STIL_GEO, mat: STIL_MAT, speed: 18, g: 3, burst: 'gravy', hit: ['Stilettoed!', 'Heel to the head!'] },
   can: { geo: new THREE.CylinderGeometry(.07, .07, .22, 10), mat: lam({ color: 0xc8ccd8, emissive: 0x222222 }), speed: 15, g: 7, burst: 'can', hit: ['Canned!', 'Tinny to the head!', 'Full can, that!'] },
   slipper: { geo: new THREE.BoxGeometry(.14, .08, .32), mat: lam({ color: 0xff8fc8 }), speed: 13, g: 6, burst: 'barm', hit: ['Slippered!', 'Your mam\'s slipper!', 'Right in the earhole!'] },
+  hubcap: { geo: new THREE.CylinderGeometry(.22, .22, .05, 14), mat: lam({ color: 0xd8dce8, emissive: 0x333333 }), speed: 16, g: 5, burst: 'can', hit: ['Hubcapped!', 'Is this your hubcap, la?', 'Hubcap to the head!'] },
+  ticket: { geo: new THREE.BoxGeometry(.22, .02, .32), mat: lam({ color: 0xffd400, emissive: 0x554400 }), speed: 14, g: 2, burst: 'barm', hit: ['Ticketed!', 'Sixty quid fine!', 'Penalty notice!'] },
+  cone: { geo: new THREE.ConeGeometry(.2, .5, 8), mat: lam({ color: 0xff6a1a }), speed: 13, g: 8, burst: 'barm', hit: ['Coned!', 'Traffic cone to the face!'] },
+  manifesto: { geo: new THREE.BoxGeometry(.3, .08, .4), mat: lam({ color: 0xc8102e, emissive: 0x330000 }), speed: 15, g: 5, burst: 'barm', hit: ['Hit with a manifesto!', 'Red tape!', 'Council tax rise!'] },
+  bigpie: { geo: new THREE.CylinderGeometry(.34, .28, .16, 14), mat: lam({ color: 0xd9a441, emissive: 0x332200 }), speed: 14, g: 7, burst: 'pie', hit: ['PIE\'D!', 'Full meat and potato to the face!', 'Gravy everywhere!'] },
+  rock: { geo: new THREE.DodecahedronGeometry(.18), mat: lam({ color: 0x8a5a3a }), speed: 14, g: 8, burst: 'barm', hit: ['Rocked!', 'Ow, me head!'] },
   acid: { geo: new THREE.SphereGeometry(.18, 8, 6), mat: new THREE.MeshBasicMaterial({ color: 0x9aff2a }), speed: 11, g: 6, burst: 'acid', hit: ['Ant spit!', 'Acid in the eye!', 'Urgh, ant goo!'] },
 };
 const PART_GEO = new THREE.BoxGeometry(.07, .07, .07);
@@ -698,6 +870,28 @@ const TYPES = {
     quips: ['HONK!', 'HOOOONK!', 'HSSSSS!', '*aggressive honking*'], hit: ['HONK?!', '*indignant honk*'] },
   mothergoose: { hp: 1000, speed: 3.6, range: [0, 3.2], dmg: 18, cd: [1, 1.6], score: 3000, melee: true, boss: true, spawner: 'goose', sfx: 'honk', bubbleY: 2.2, creature: () => makeGoose('mothergoose'), meleeLines: ['MOTHER GOOSE SAYS NO!', 'Flattened!', 'Honked into next week!'],
     quips: ['HOOOOOOOONK!!!', 'THIS IS MY PARK!', '*HONKS IN GOOSE*', 'HONK. HONK. HONK.'], hit: ['*outraged honking*', 'HONK!!'] },
+  // level 4: the East Lancs
+  scouser: { hp: 50, speed: 3.8, range: [6, 13], dmg: 9, cd: [1.2, 2.2], score: 150, proj: 'hubcap',
+    quips: ['Eh, eh, EH!', 'Is this your car, la?', 'Calm down!', 'Giz yer wheels!', 'We\'re not payin\' no charge!', 'Sound, la!'], hit: ['Me shell suit!', 'Ah, me perm!', 'Behave!'] },
+  roadworker: { hp: 120, speed: 2.8, range: [0, 1.8], dmg: 14, cd: [1.1, 1.6], score: 300, melee: true, meleeLines: ['Shovelled!', 'Lane closed!', 'Road works – you\'re the road!'],
+    quips: ['Lane closed, mate!', 'We\'re on our break!', 'Eighteen-month delay, this!', 'Use the diversion!'], hit: ['Me tea!', 'Health and safety!'] },
+  warden: { hp: 70, speed: 3.4, range: [5, 12], dmg: 9, cd: [1, 1.8], score: 200, proj: 'ticket',
+    quips: ['You can\'t park there!', 'That\'s a ticket!', 'Double yellows, lad!', 'I\'m just doing me job!'], hit: ['I\'ll appeal that!', 'Me notebook!'] },
+  trucker: { hp: 150, speed: 2.6, range: [0, 1.9], dmg: 16, cd: [1.1, 1.7], score: 300, melee: true, meleeLines: ['Jack-knifed!', 'Trucker\'s headlock!'],
+    quips: ['Oi! Me butty!', 'I\'m on me tachograph!', 'Ten-four, good buddy!', 'Get off the hard shoulder!'], hit: ['Me bacon barm!', 'Steady on!'] },
+  mp: { hp: 1000, speed: 2.4, range: [4, 12], dmg: 13, cd: [.7, 1.2], score: 3000, proj: 'manifesto', boss: true, spawner: 'scouser', bubbleY: 2.6,
+    quips: ['CONGESTION CHARGE! FIVE POUND!', 'Vote Flangefelter!', 'No Scousers past Rainhill!', 'I\'m an MP, you know!', 'This is ALL in my manifesto!'], hit: ['My expenses!', 'I\'ll have you in the Commons!', 'Point of order!'] },
+  // level 5: Crank Caverns
+  bat: { hp: 28, speed: 5.4, range: [0, 1.6], dmg: 7, cd: [.6, 1.1], score: 120, melee: true, sfx: 'screech', creature: () => makeBat(), meleeLines: ['Batted!', 'Bitten by a bat!'], bubbleY: 2.4,
+    quips: ['*screech*', '*flap flap flap*', 'EEEEE!'], hit: ['*squeak*'] },
+  hermit: { hp: 60, speed: 3, range: [5, 11], dmg: 10, cd: [1, 1.8], score: 200, proj: 'rock',
+    quips: ['Get out of my cave!', 'I\'ve lived here since 1974!', 'You\'ll not get me pies!', 'Is it still the eighties?'], hit: ['Me beard!', 'Ow, me knees!'] },
+  pitman: { hp: 130, speed: 2.9, range: [0, 1.8], dmg: 14, cd: [1, 1.6], score: 300, melee: true, meleeLines: ['Pickaxed!', 'Sent down the pit!'],
+    quips: ['Dig faster, lads!', 'For the Pie Baron!', 'WIGAN!', 'Nobody leaves the pie mine!'], hit: ['Me lamp!', 'Me hat!'] },
+  beast: { hp: 650, speed: 3.6, range: [0, 2.6], dmg: 20, cd: [1.2, 1.8], score: 2000, melee: true, bubbleY: 2.6, meleeLines: ['Mauled by the Beast!', 'Flung across the cave!'],
+    quips: ['RAAAARGH!', 'GRRRRR!', '*the beast sniffs the air*'], hit: ['RAAARGH!!', 'GRAAAH!'] },
+  piebaron: { hp: 1300, speed: 2.6, range: [4, 12], dmg: 15, cd: [.6, 1.1], score: 5000, proj: 'bigpie', boss: true, spawner: 'wiganer', bubbleY: 2.9,
+    quips: ['I AM THE PIE BARON!', 'Wigan will rule St Helens!', 'You\'ll never stop the pies!', 'EAT PIE, SAINT!', 'Winning Wigan DNA!'], hit: ['My crust!', 'Not the hat!', 'You\'ll pay for that!'] },
   keeper: { hp: 130, speed: 2.7, range: [0, 1.7], dmg: 14, cd: [1.1, 1.6], score: 300, melee: true, meleeLines: ['Clipped by a keeper!', 'Escorted off the premises!', 'Whistled at, then walloped!'],
     quips: ['Keep off the grass!', 'Park\'s shut, lad!', 'No ball games!', 'Can you not read the sign?', 'I\'ve got a whistle and I\'ll use it!'], hit: ['That\'s council property!', 'Right, you\'re banned!', 'Oi!'] },
   drinker: { hp: 60, speed: 2.8, range: [6, 12], dmg: 9, cd: [1.4, 2.4], score: 150, proj: 'can',
@@ -731,7 +925,8 @@ function damageEnemy(e, dmg, dir) {
   }
 }
 const NAMES = { wiganer: 'Wiganer', bouncer: 'Bouncer', hen: 'Bridesmaid', bride: 'THE BRIDE', scally: 'Scally', mum: 'Angry mum', ant: 'Giant ant', spitter: 'Spitter ant', soldier: 'Soldier ant',
-  queen: 'THE QUEEN', goose: 'Goose', mothergoose: 'MOTHER GOOSE', keeper: 'Park keeper', drinker: 'Bench drinker' };
+  queen: 'THE QUEEN', goose: 'Goose', mothergoose: 'MOTHER GOOSE', keeper: 'Park keeper', drinker: 'Bench drinker',
+  scouser: 'Scouser', roadworker: 'Road worker', warden: 'Traffic warden', trucker: 'Trucker', mp: 'FRED FLANGEFELTER MP', bat: 'Bat', hermit: 'Cave hermit', pitman: 'Wigan pitman', beast: 'THE BEAST', piebaron: 'THE PIE BARON' };
 function enemyThrow(e) { e.throwT = e.T.creature ? .2 : .38; e.c.ctl.once('Throw', 1.5); }
 function launchThrow(e) {
   const from = e.g.position.clone().add(new THREE.Vector3(0, (e.T.mouthY || 1.6) * e.scale, 0));
@@ -821,6 +1016,40 @@ const LEVELS = {
       { trigger: -152, title: 'WAVE 4 – THE BANDSTAND', spawn: () => { spawn('keeper', 2, -168); spawn('keeper', -8, -176, 2); spawn('drinker', 5, -174); spawn('drinker', -2, -180, 4); for (let i = 0; i < 4; i++) spawn('goose', rand(-6, 6), -178 - rand(0, 6), 2 + i * 1.5); } },
       { trigger: -190, title: 'FINAL BOSS – MOTHER GOOSE', boss: true, spawn: () => { const g = spawn('mothergoose', 2, -214); say(g, 'HOOOOOOOONK!!!'); for (let i = 0; i < 3; i++) { const m = spawn('goose', rand(-6, 6), -207 - i * 2, i * 2); m.minion = true; } } },
     ] },
+  4: { name: 'THE EAST LANCS', sub: 'Chaos on the East Lancs',
+    brief: ['The night bus to Billinge has conked out on the East Lancs. The driver\'s gone for a butty and he\'s not coming back.',
+      'Walk it. Fred Flangefelter MP has brought in his Scouse congestion charge and the A580 is in uproar. <b>Mind the traffic – it doesn\'t stop for anyone.</b>'],
+    start: ['WALK TO BILLINGE', 'The A580 East Lancs Road · Sunday, 5:20am'], obj: 'Follow the East Lancs to Billinge ↓ (mind the cars)',
+    bossName: 'FRED FLANGEFELTER MP', bossSub: 'MP for Pocketnook and Parr Baths.', end: ['FLANGEFELTER HAS BEEN DEFEATED', 'Recount not needed. Here comes your lift.'],
+    dead: ['Run over on the East Lancs.', 'Fined, ticketed and flattened.', 'Hubcapped into a coma.', 'Defeated by local government.'],
+    cheer: ['Eh, eh, EH!', 'Sound, la!', 'Ticketed!', 'Vote Flangefelter!'],
+    wonSub: 'Sunrise on the East Lancs', wonText: 'Flangefelter\'s congestion charge has been scrapped, the Scousers have gone home and a trucker has offered you a lift to Billinge. Crank Caverns awaits.',
+    ranks: ['KING OF THE A580', 'HARD SHOULDER HERO', 'LAY-BY LEGEND', 'ROADKILL FROM RAINFORD'],
+    exit: { prompt: 'Get in the lorry →', at: new THREE.Vector3(3.5, 0, -214), make: () => lorry(18, -216), move: (m, t) => { m.position.x = Math.max(4, 18 - t * 7); } },
+    encounters: [
+      { trigger: -14, title: 'WAVE 1 – THE SCOUSE INVASION', sub: 'They\'ve come to protest the charge.', spawn: () => { spawn('scouser', -5, -42); spawn('scouser', 3, -46); spawn('scouser', 6, -50); spawn('scouser', -2, -52, 3); spawn('warden', 0, -48, 5); } },
+      { trigger: -62, title: 'WAVE 2 – BIG MICK\'S BUTTY VAN', spawn: () => { const t = spawn('trucker', 6, -74); say(t, 'Oi! Me butty!'); spawn('trucker', -6, -80, 2); spawn('scouser', 2, -90); spawn('warden', -3, -94, 3); spawn('scouser', 6, -96, 5); } },
+      { trigger: -107, title: 'WAVE 3 – ROAD WORKS AHEAD', sub: 'Expect delays.', spawn: () => { spawn('roadworker', -4, -128); spawn('roadworker', 4, -132); spawn('warden', 0, -138); spawn('scouser', -7, -140, 2); spawn('roadworker', 7, -142, 5); } },
+      { trigger: -152, title: 'WAVE 4 – RUSH HOUR', sub: 'The traffic\'s getting faster.', spawn: () => { for (let i = 0; i < 6; i++) spawn('scouser', rand(-8, 8), -168 - rand(0, 10), Math.floor(i / 2) * 2.5); spawn('trucker', 2, -176, 1); spawn('warden', -5, -178, 4); } },
+      { trigger: -190, title: 'FINAL BOSS – FRED FLANGEFELTER MP', boss: true, spawn: () => { const m = spawn('mp', 0, -214); say(m, 'CONGESTION CHARGE! FIVE POUND!'); for (let i = 0; i < 3; i++) { const w = spawn(i ? 'scouser' : 'warden', rand(-6, 6), -206 - i * 2, i * 2); w.minion = true; } } },
+    ] },
+  5: { name: 'CRANK CAVERNS', sub: 'The Secret of Crank Caverns',
+    brief: ['Billinge. Under the hill lie the old sandstone tunnels of Crank Caverns, and something has been coming and going all night. Lorries. Full of pies.',
+      'This is where it all started. Somebody is behind the Wigan invasion, and they\'re hiding down there. <b>Find them. End it.</b>'],
+    start: ['INTO CRANK CAVERNS', 'Crank, near Billinge · Sunday, 6:10am'], obj: 'Go deeper into the caverns ↓',
+    bossName: 'THE PIE BARON OF WIGAN', bossSub: 'The mastermind behind it all.', end: ['THE PIE BARON IS SPLATTED', 'St Helens is saved. Walk into the daylight.'],
+    dead: ['Lost forever in Crank Caverns.', 'Baked into a pie.', 'Mauled by the Beast.', 'The Pie Baron laughs last.'],
+    cheer: ['WIGAN!', 'FOR THE PIE BARON!', 'RAAARGH!', '*screech*'],
+    wonSub: 'You saved St Helens', wonText: 'The Pie Baron is splatted, his secret pie mine is shut, Wigan have retreated back up the East Lancs and St Helens is safe. SHCN will be dining out on this story for the next twenty years. Brian Thong salutes you.',
+    ranks: ['SAVIOUR OF ST HELENS', 'HERO OF CRANK CAVERNS', 'PIE MINE BUSTER', 'BATTERED IN BILLINGE'],
+    exit: { prompt: 'Walk into the daylight ↓', at: new THREE.Vector3(0, 0, -226), make: () => daylight(), move: () => {} },
+    encounters: [
+      { trigger: -14, title: 'WAVE 1 – SOMETHING IN THE DARK', spawn: () => { for (let i = 0; i < 6; i++) spawn('bat', rand(-7, 7), -40 - rand(0, 12), i > 3 ? 2.5 : 0); spawn('hermit', 5, -50, 1); } },
+      { trigger: -62, title: 'WAVE 2 – THE PIE MINE', sub: 'Wiganers. Down here?!', spawn: () => { spawn('pitman', -4, -78); spawn('pitman', 4, -82); spawn('wiganer', -6, -92); spawn('wiganer', 6, -94, 2); spawn('hermit', 0, -96, 4); } },
+      { trigger: -107, title: 'WAVE 3 – WHERE THE ANTS CAME FROM', sub: 'So that\'s how they got to the Burgies.', spawn: () => { [[-5, -128], [5, -132], [0, -138], [-7, -140]].forEach(([x, z], i) => spawn('ant', x, z, i > 1 ? 2 : 0)); spawn('spitter', 4, -142, 1); for (let i = 0; i < 3; i++) spawn('bat', rand(-6, 6), -136, 3 + i); } },
+      { trigger: -152, title: 'WAVE 4 – THE BEAST OF CRANK CAVERNS', sub: 'It\'s real. It\'s really real.', spawn: () => { const b = spawn('beast', 0, -178); say(b, 'RAAAARGH!'); spawn('pitman', -5, -172, 3); spawn('pitman', 5, -174, 6); } },
+      { trigger: -190, title: 'FINAL BOSS – THE PIE BARON OF WIGAN', boss: true, spawn: () => { const b = spawn('piebaron', 0, -214); say(b, 'I AM THE PIE BARON!'); for (let i = 0; i < 4; i++) { const w = spawn(i % 2 ? 'pitman' : 'wiganer', rand(-6, 6), -206 - i * 2, i * 1.8); w.minion = true; } } },
+    ] },
 };
 const LV = LEVELS[LEVEL_N];
 const ENCOUNTERS = LV.encounters;
@@ -890,7 +1119,7 @@ function win() {
   const timeBonus = Math.max(0, Math.round(1500 - stats.time * 4)), hpBonus = Math.round(player.hp * 10);
   score += timeBonus + hpBonus;
   const best = STORE.get(BEST_KEY, 0); const newBest = score > best; if (newBest) STORE.set(BEST_KEY, score);
-  if (STORE.get('ph-unlocked', 1) < LEVEL_N + 1) STORE.set('ph-unlocked', Math.min(3, LEVEL_N + 1));
+  if (STORE.get('ph-unlocked', 1) < LEVEL_N + 1) STORE.set('ph-unlocked', Math.min(5, LEVEL_N + 1));
   const R = LV.ranks, rank = score > 9000 ? R[0] : score > 6500 ? R[1] : score > 4000 ? R[2] : R[3];
   $('ph-win-stats').innerHTML = `<div><span>Time</span><b>${Math.floor(stats.time / 60)}:${String(Math.floor(stats.time % 60)).padStart(2, '0')}</b></div>
     <div><span>Splatted</span><b>${stats.kos}</b></div><div><span>Accuracy</span><b>${acc}%</b></div><div><span>Time bonus</span><b>+${timeBonus}</b></div>
@@ -925,11 +1154,11 @@ $('ph-won-text').textContent = LV.wonText;
 $('ph-restart').textContent = 'Start this level again';
 if (LEVEL_N > 1) document.title = `PIE HARD – Level ${LEVEL_N}: ${LV.name} | St Helens Celebrity News`;
 const unlocked = Math.max(STORE.get('ph-unlocked', 1), LEVEL_N);
-$('ph-levels').innerHTML = [1, 2, 3].map((n) => n <= unlocked
+$('ph-levels').innerHTML = [1, 2, 3, 4, 5].map((n) => n <= unlocked
   ? `<a class="lvl${n === LEVEL_N ? ' on' : ''}" href="${n === 1 ? './' : '?level=' + n}"><b>${n}</b>${LEVELS[n].name}</a>`
   : `<span class="lvl locked"><b>${n}</b>LOCKED</span>`).join('');
-if (LEVEL_N < 3) { $('ph-next').hidden = false; $('ph-next').textContent = `Next level: ${LEVELS[LEVEL_N + 1].name} →`; $('ph-next').addEventListener('click', () => { location.href = '?level=' + (LEVEL_N + 1); }); }
-else $('ph-soon').textContent = 'Still to come: the East Lancs and Crank Caverns.';
+if (LEVEL_N < 5) { $('ph-next').hidden = false; $('ph-next').textContent = `Next level: ${LEVELS[LEVEL_N + 1].name} →`; $('ph-next').addEventListener('click', () => { location.href = '?level=' + (LEVEL_N + 1); }); }
+else $('ph-soon').textContent = 'That\'s the lot – you\'ve completed PIE HARD. St Helens salutes you.';
 
 // ---------------------------------------------------------------- update
 function collide(pos, r) {
@@ -1071,7 +1300,7 @@ const clock = new THREE.Clock(); let t = 0, fpsAcc = 0, fpsN = 0, frameNo = 0, l
 function frame() {
   const dt = Math.min(.05, clock.getDelta()); t += dt; lastDt = dt;
   if (state.mode === 'play') {
-    updatePlayer(dt); updateEnemies(dt, t); updateShots(dt); updateEncounters();
+    updatePlayer(dt); updateEnemies(dt, t); updateShots(dt); updateEncounters(); updateTraffic(dt);
     if (state.mode === 'play') stats.time = (performance.now() - stats.start) / 1000;
   } else if (state.mode === 'dead' || state.mode === 'won') {
     for (const e of enemies) if (e.delay <= 0 && (!e.dead || e.deadT < 4)) { if (e.dead) e.deadT += dt; e.c.ctl.update(dt); }
@@ -1122,4 +1351,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 hud(); overlay('title'); frame();
-window.__ph = { state, player, enemies, start, ENCOUNTERS, fire, throwGrenade, setWeapon, stats, damageEnemy, get score() { return score; }, get taxi() { return taxiArrive; }, exitAt: LV.exit.at, renderer, scene, fx, decals };
+window.__ph = { state, player, enemies, start, ENCOUNTERS, fire, throwGrenade, setWeapon, stats, damageEnemy, get score() { return score; }, get taxi() { return taxiArrive; }, exitAt: LV.exit.at, cars, renderer, scene, fx, decals };
