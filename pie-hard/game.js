@@ -619,6 +619,7 @@ function mergeStatic() {
   }
 }
 mergeStatic();
+const weather = { on: LEVEL_N !== 5, t: rand(15, 25), wet: LEVEL_N !== 5 ? 1 : 0 };
 if (LEVEL_N === 4) makeTraffic();
 if (LEVEL_N === 5) rain.visible = false;
 
@@ -1317,6 +1318,11 @@ function frame() {
   kick = Math.max(0, kick - dt * 6);
   vm.position.set(Math.cos(player.bob) * .012, Math.abs(Math.sin(player.bob)) * .012 - (swapT > 0 ? swapT : 0), kick * .08);
   vm.rotation.x = kick * .25;
+  // weather: showers come and go; sound and rain fade together
+  weather.t -= dt; if (weather.t <= 0) { weather.on = !weather.on; weather.t = weather.on ? rand(18, 35) : rand(45, 90); }
+  weather.wet = clamp(weather.wet + (weather.on && LEVEL_N !== 5 ? 1 : -1) * dt * .25, 0, 1);
+  rain.visible = weather.wet > .02; rain.material.opacity = .6 * weather.wet;
+  if (rainGain) rainGain.gain.value = .05 * weather.wet;
   // rain follows the player
   const rp = rainGeo.attributes.position.array;
   for (let i = 0; i < RAIN; i++) {
