@@ -688,8 +688,8 @@ const SFX = {
 const player = { pos: new THREE.Vector3(0, 0, 0), vel: new THREE.Vector3(), yaw: 0, pitch: 0, onGround: true, hp: 100, alive: true,
   weapon: 0, ammo: [14, 18], grenades: 2, cool: 0, bob: 0, hurtT: 0 };
 const WEAPONS = [
-  { name: 'PIE LAUNCHER', ammoName: 'PIES', max: 30, rate: .55 },
-  { name: 'MUSHY PEA SHOTGUN', ammoName: 'TUBS', max: 36, rate: .8 },
+  { name: 'PIE LAUNCHER', ammoName: 'PIES', max: 30, rate: .45, click: .12 },
+  { name: 'MUSHY PEA SHOTGUN', ammoName: 'TUBS', max: 36, rate: .7, click: .3 },
 ];
 const keys = {}; let locked = false, sens = STORE.get('ph-sens', 1);
 document.addEventListener('keydown', (e) => {
@@ -701,7 +701,7 @@ document.addEventListener('keydown', (e) => {
 });
 document.addEventListener('keyup', (e) => { keys[e.code] = false; });
 let mouseDown = false;
-canvas.addEventListener('mousedown', (e) => { if (e.button === 0) mouseDown = true; if (e.button === 2) throwGrenade(); });
+canvas.addEventListener('mousedown', (e) => { if (e.button === 0) { mouseDown = true; if (state.mode === 'play' && locked) fire(true); } if (e.button === 2) throwGrenade(); });
 document.addEventListener('mouseup', (e) => { if (e.button === 0) mouseDown = false; });
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('wheel', (e) => { if (state.mode === 'play') setWeapon(player.weapon ? 0 : 1); }, { passive: true });
@@ -780,16 +780,23 @@ function decal(pos, normal, kind, size = .5) {
 function camForward() { return new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ')); }
 function eyePos() { return new THREE.Vector3(player.pos.x, player.pos.y + 1.65, player.pos.z); }
 
-function fire() {
-  if (player.cool > 0 || swapT > 0) return;
+function fire(click) {
+  // every click fires straight away (short minimum gap); holding the button auto-fires at the slower rate
+  if (swapT > 0 || (click ? player.clickCool > 0 : player.cool > 0)) return;
   const w = player.weapon;
   if (player.ammo[w] <= 0) { SFX.click(); toast(pick(['Out of pies! Raid a chippy.', 'No peas left, lad.', 'Empty. Find some supplies.'])); player.cool = .4; return; }
-  player.ammo[w]--; player.cool = WEAPONS[w].rate; kick = 1; stats.shots++;
+  player.ammo[w]--; player.cool = WEAPONS[w].rate; player.clickCool = WEAPONS[w].click; kick = 1; stats.shots++;
   const dir = camForward(), eye = eyePos();
   if (w === 0) {
     SFX.throw();
-    const m = new THREE.Mesh(PIE_GEO, PIE_MAT); m.position.copy(eye).addScaledVector(dir, .6).add(new THREE.Vector3(0, -.15, 0)); scene.add(m);
-    shots.push({ m, v: dir.clone().multiplyScalar(30).add(new THREE.Vector3(0, 2.2, 0)), kind: 'pie', t: 3 });
+    // aim the lob so the pie lands exactly where the crosshair points
+    const h = rayHit(eye, dir, 70), target = h.point ? h.point.clone() : eye.clone().addScaledVector(dir, 40);
+    if (h.enemy) target.y = Math.max(target.y, h.enemy.g.position.y + 1.1 * h.enemy.scale);
+    const from = eye.clone().addScaledVector(dir, .6).add(new THREE.Vector3(0, -.12, 0));
+    const tFly = Math.max(.08, from.distanceTo(target) / 34);
+    const v = target.clone().sub(from).divideScalar(tFly); v.y += .5 * 9.8 * tFly;
+    const m = new THREE.Mesh(PIE_GEO, PIE_MAT); m.position.copy(from); scene.add(m);
+    shots.push({ m, v, kind: 'pie', t: 3 });
   } else {
     SFX.pea(); let hitAny = false;
     for (let i = 0; i < 10; i++) {
@@ -1191,7 +1198,7 @@ function updatePlayer(dt) {
   const moving = Math.hypot(player.vel.x, player.vel.z);
   player.bob += dt * moving * 1.6;
   if (mouseDown) fire();
-  player.cool -= dt; swapT -= dt;
+  player.cool -= dt; player.clickCool = (player.clickCool || 0) - dt; swapT -= dt;
 }
 function updateEnemies(dt, t) {
   const pp = player.pos;
@@ -1246,10 +1253,16 @@ function updateEnemies(dt, t) {
 }
 function updateShots(dt) {
   for (let i = shots.length - 1; i >= 0; i--) {
-    const s = shots[i]; s.t -= dt; s.v.y -= 9.8 * dt; s.m.position.addScaledVector(s.v, dt); s.m.rotation.x += dt * 8; s.m.rotation.y += dt * 5;
+    const s = shots[i]; s.t -= dt; s.m.rotation.x += dt * 8; s.m.rotation.y += dt * 5;
     let hit = s.t <= 0 && s.kind === 'barm';
     const p = s.m.position;
-    if (!hit && s.kind === 'pie') for (const e of enemies) { if (e.dead || e.delay > 0) continue; const dx = p.x - e.g.position.x, dz = p.z - e.g.position.z; if (dx * dx + dz * dz < (.5 * e.scale) ** 2 && p.y < 2.2 * e.scale) { damageEnemy(e, 34, s.v.clone()); stats.hits++; hitMarker(); hit = true; break; } }
+    // move in small steps so fast pies can't skip through someone
+    const steps = Math.max(1, Math.ceil(s.v.length() * dt / .25)), sd = dt / steps;
+    for (let k = 0; k < steps && !hit; k++) {
+      s.v.y -= 9.8 * sd; p.addScaledVector(s.v, sd);
+      if (s.kind === 'pie') for (const e of enemies) { if (e.dead || e.delay > 0) continue; const dx = p.x - e.g.position.x, dz = p.z - e.g.position.z; if (dx * dx + dz * dz < (.55 * e.scale) ** 2 && p.y < 2.3 * e.scale) { damageEnemy(e, 34, s.v.clone()); stats.hits++; hitMarker(); hit = true; break; } }
+      if (p.y <= .05) break;
+    }
     if (!hit && (p.y <= .05 || Math.abs(p.x) > 9.9 || s.t <= 0)) hit = true;
     if (!hit && p.y < 1.2) for (const c of colliders) if (p.x > c.minX && p.x < c.maxX && p.z > c.minZ && p.z < c.maxZ) { hit = true; break; }
     if (s.kind === 'barm' && hit && s.t > 0 && p.y <= .05) { s.v.y = Math.abs(s.v.y) * .35; s.v.x *= .6; s.v.z *= .6; p.y = .06; hit = false; }
