@@ -2,6 +2,7 @@
 // First-person food fight. Three.js, everything else built in code.
 import * as THREE from 'three';
 import { loadCharacters, makeCharacter } from './characters.js';
+import { makeAnt, makeGoose } from './creatures.js';
 
 // ---------------------------------------------------------------- setup
 const $ = (id) => document.getElementById(id);
@@ -25,6 +26,7 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const STORE = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
                 set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+const LEVEL_N = clamp(parseInt(new URLSearchParams(location.search).get('level'), 10) || 1, 1, 3);
 
 // ---------------------------------------------------------------- textures
 function canvasTex(w, h, draw, repeat) {
@@ -117,41 +119,10 @@ const colliders = [];   // {minX,maxX,minZ,maxZ}
 function addCollider(x, z, w, d) { colliders.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 }); }
 const STREET_HALF = 9.4, END_Z = -228, START_Z = 6;
 
-scene.add(new THREE.HemisphereLight(0x7a6ab8, 0x2a1830, 1.25));
-scene.add(new THREE.AmbientLight(0x40385a, 0.9));
+const hemi = new THREE.HemisphereLight(0x7a6ab8, 0x2a1830, 1.25); scene.add(hemi);
+const ambient = new THREE.AmbientLight(0x40385a, 0.9); scene.add(ambient);
 const moon = new THREE.DirectionalLight(0x8a9cff, 0.35); moon.position.set(-30, 60, 20); scene.add(moon);
 
-// ground: road, pavements, kerbs
-const roadTex = canvasTex(256, 256, (g, w, h) => {
-  g.fillStyle = '#2a2830'; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(${rand(80, 140)},${rand(80, 140)},${rand(90, 150)},${rand(.05, .2)})`; g.fillRect(rand(0, w), rand(0, h), 2, 2); }
-  g.fillStyle = '#d8d8d8'; g.fillRect(124, 20, 8, 90); g.fillRect(124, 148, 8, 90);
-}, [1, 30]);
-const road = new THREE.Mesh(new THREE.PlaneGeometry(12, 240), lam({ map: roadTex }));
-road.rotation.x = -Math.PI / 2; road.position.set(0, 0, -112); scene.add(road);
-const paveTex = canvasTex(128, 128, (g, w, h) => {
-  g.fillStyle = '#5d5866'; g.fillRect(0, 0, w, h); g.strokeStyle = '#4a4552'; g.lineWidth = 3;
-  for (let i = 0; i <= w; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, h); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(w, i); g.stroke(); }
-  for (let i = 0; i < 300; i++) { g.fillStyle = `rgba(0,0,0,${rand(.03, .12)})`; g.fillRect(rand(0, w), rand(0, h), 3, 3); }
-}, [2, 60]);
-for (const s of [-1, 1]) {
-  const p = new THREE.Mesh(new THREE.BoxGeometry(4, .16, 240), lam({ map: paveTex })); p.position.set(s * 8, .08, -112); scene.add(p);
-  const k = new THREE.Mesh(new THREE.BoxGeometry(.25, .18, 240), lam({ color: 0x8a8590 })); k.position.set(s * 6.05, .09, -112); scene.add(k);
-}
-// puddles
-const puddleMat = new THREE.MeshPhongMaterial({ color: 0x1a1430, specular: 0xaa88ff, shininess: 90, transparent: true, opacity: .8 });
-for (let i = 0; i < 26; i++) {
-  const pd = new THREE.Mesh(new THREE.CircleGeometry(rand(.6, 1.8), 18), puddleMat);
-  pd.rotation.x = -Math.PI / 2; pd.scale.set(1, rand(.4, 1), 1); pd.position.set(rand(-5.5, 5.5), .012, rand(-220, 0)); scene.add(pd);
-}
-
-// buildings + shopfronts
-const SHOPS = {
-  right: [[2, 'KEBABS', '#ff3b6b', 'lit'], [-30, 'THE BLOOD TUB', '#ffb13b', 'lit'], [-58, 'OFFIE', '#7cff4f', 'lit'], [-92, 'TANNING', '#ff4fd8', 'dark'],
-          [-120, 'CHIPPY', '#ffb13b', 'lit'], [-150, 'BOOKIES', '#39e0ff', 'shutter'], [-178, 'PIZZA', '#ff6a3b', 'lit'], [-204, 'BAR', '#ff4fd8', 'lit']],
-  left:  [[-8, 'VAPES', '#7cff4f', 'lit'], [-36, 'PAWN', '#ffe14f', 'shutter'], [-76, 'NITECLUB', '#39e0ff', 'lit'], [-106, 'BAKERY', '#39a0ff', 'dark'],
-          [-136, 'CASH 4 GOLD', '#ffe14f', 'lit'], [-164, 'TO LET', '#bbbbbb', 'dark'], [-196, 'KARAOKE', '#b06bff', 'lit'], [-220, 'TAXIS', '#7cff4f', 'lit']]
-};
 const neonSpots = [], lampSpots = [];
 const glowTexCache = {};
 function glowMat(col) {
@@ -161,48 +132,24 @@ function glowMat(col) {
   }
   return glowTexCache[col];
 }
-const BRICKS = [['#7a3a2a', '#3a2a28'], ['#8a4a32', '#40302c'], ['#5e4a5a', '#2c2430'], ['#6a5040', '#33281f'], ['#4c4a5c', '#26242e']];
-for (const side of ['left', 'right']) {
-  const sx = side === 'left' ? -1 : 1, list = SHOPS[side];
-  for (let i = 0; i < list.length; i++) {
-    const [z0, name, neon, kind] = list[i];
-    const zNext = i + 1 < list.length ? list[i + 1][0] : END_Z - 6;
-    const len = Math.abs(zNext - z0) - (Math.random() < .5 ? 2.2 : 0);       // occasional alley gap
-    const zc = z0 - len / 2 + 4, floors = pick([2, 3, 3, 4]), hgt = 3.6 + floors * 3;
-    const [bc, mc] = pick(BRICKS);
-    const bmat = lam({ map: facadeTex(bc, floors, .45) });
-    const plain = lam({ map: brickTex(bc, mc) });
-    const geo = new THREE.BoxGeometry(10, hgt, len);
-    // material order: +x, -x, +y, -y, +z, -z ; street face is -x for right side, +x for left side
-    const mats = [plain, plain, lam({ color: 0x1a1520 }), plain, plain, plain];
-    mats[sx > 0 ? 1 : 0] = bmat;
-    const b = new THREE.Mesh(geo, mats); b.position.set(sx * 15, hgt / 2, zc); scene.add(b);
-    // shopfront
-    const shop = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(len - .6, 9), 3.6), lam({ map: shopTex(name, neon, kind), emissive: 0xffffff, emissiveIntensity: .6, emissiveMap: null }));
-    shop.material.emissiveMap = shop.material.map;
-    shop.position.set(sx * 9.98, 1.95, zc); shop.rotation.y = -sx * Math.PI / 2; scene.add(shop);
-    if (kind !== 'dark') { neonSpots.push({ pos: new THREE.Vector3(sx * 8.4, 3.4, zc), color: new THREE.Color(neon), flick: name === 'NITECLUB' || name === 'KARAOKE' });
-      const glow = new THREE.Sprite(glowMat(neon)); glow.position.set(sx * 9.6, 3.4, zc); glow.scale.set(8, 3, 1); scene.add(glow); }
-    addCollider(sx * 15, zc, 10, len);
-  }
-}
 // end walls
 function endWall(z, label) {
   const w = new THREE.Mesh(new THREE.BoxGeometry(30, 14, 2), lam({ map: facadeTex('#4a3a4a', 3, .3) })); w.position.set(0, 7, z); scene.add(w);
   if (label) { const s = new THREE.Mesh(new THREE.PlaneGeometry(10, 2), lam({ map: shopTex(label, '#7cff4f', 'dark'), emissive: 0xffffff, emissiveIntensity: .4 })); s.material.emissiveMap = s.material.map; s.position.set(0, 4.5, z + 1.02); scene.add(s); }
 }
-endWall(END_Z - 1, 'TAXI RANK'); endWall(START_Z + 3, null);
 
 // lamp posts
 const lampMat = lam({ color: 0x2a2a30 }), lampHead = new THREE.MeshBasicMaterial({ color: 0xffc46b });
-for (let z = -4, i = 0; z > END_Z + 4; z -= 22, i++) for (const s of [-1, 1]) {
+function streetLamps(zFrom = -4, zTo = END_Z + 4, xOff = 6.6) {
+for (let z = zFrom, i = 0; z > zTo; z -= 22, i++) for (const s of [-1, 1]) {
   if ((i + (s > 0 ? 1 : 0)) % 2) continue;
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(.08, .12, 6.2, 8), lampMat); post.position.set(s * 6.6, 3.1, z); scene.add(post);
-  const arm = new THREE.Mesh(new THREE.BoxGeometry(1.4, .1, .1), lampMat); arm.position.set(s * 6.0, 6.1, z); scene.add(arm);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(.6, .18, .3), lampHead); head.position.set(s * 5.4, 6.0, z); scene.add(head);
-  lampSpots.push({ pos: new THREE.Vector3(s * 4.6, 5.6, z) });
-  const pool = new THREE.Sprite(glowMat('#ffb060')); pool.position.set(s * 5.4, 5.9, z); pool.scale.set(2.2, 1.2, 1); scene.add(pool);
-  addCollider(s * 6.6, z, .4, .4);
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(.08, .12, 6.2, 8), lampMat); post.position.set(s * xOff, 3.1, z); scene.add(post);
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(1.4, .1, .1), lampMat); arm.position.set(s * (xOff - .6), 6.1, z); scene.add(arm);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(.6, .18, .3), lampHead); head.position.set(s * (xOff - 1.2), 6.0, z); scene.add(head);
+  lampSpots.push({ pos: new THREE.Vector3(s * (xOff - 2), 5.6, z) });
+  const pool = new THREE.Sprite(glowMat('#ffb060')); pool.position.set(s * (xOff - 1.2), 5.9, z); pool.scale.set(2.2, 1.2, 1); scene.add(pool);
+  addCollider(s * xOff, z, .4, .4);
+}
 }
 // light pools: a few real lights that follow the player to the nearest lamps and neon signs
 const NEON_POOL = [], LAMP_POOL = [];
@@ -239,6 +186,65 @@ function coach(x, z) {
   for (const wz of [-3.8, 3.8]) for (const wx of [-1.3, 1.3]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .3, 12), PROPMAT.tyre); w.rotation.z = Math.PI / 2; w.position.set(wx, .5, wz); g.add(w); }
   g.position.set(x, 0, z); scene.add(g); addCollider(x, z, 2.8, 11.2); return g;
 }
+function buildStreet() {
+// ground: road, pavements, kerbs
+const roadTex = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#2a2830'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(${rand(80, 140)},${rand(80, 140)},${rand(90, 150)},${rand(.05, .2)})`; g.fillRect(rand(0, w), rand(0, h), 2, 2); }
+  g.fillStyle = '#d8d8d8'; g.fillRect(124, 20, 8, 90); g.fillRect(124, 148, 8, 90);
+}, [1, 30]);
+const road = new THREE.Mesh(new THREE.PlaneGeometry(12, 240), lam({ map: roadTex }));
+road.rotation.x = -Math.PI / 2; road.position.set(0, 0, -112); scene.add(road);
+const paveTex = canvasTex(128, 128, (g, w, h) => {
+  g.fillStyle = '#5d5866'; g.fillRect(0, 0, w, h); g.strokeStyle = '#4a4552'; g.lineWidth = 3;
+  for (let i = 0; i <= w; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, h); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(w, i); g.stroke(); }
+  for (let i = 0; i < 300; i++) { g.fillStyle = `rgba(0,0,0,${rand(.03, .12)})`; g.fillRect(rand(0, w), rand(0, h), 3, 3); }
+}, [2, 60]);
+for (const s of [-1, 1]) {
+  const p = new THREE.Mesh(new THREE.BoxGeometry(4, .16, 240), lam({ map: paveTex })); p.position.set(s * 8, .08, -112); scene.add(p);
+  const k = new THREE.Mesh(new THREE.BoxGeometry(.25, .18, 240), lam({ color: 0x8a8590 })); k.position.set(s * 6.05, .09, -112); scene.add(k);
+}
+// puddles
+const puddleMat = new THREE.MeshPhongMaterial({ color: 0x1a1430, specular: 0xaa88ff, shininess: 90, transparent: true, opacity: .8 });
+for (let i = 0; i < 26; i++) {
+  const pd = new THREE.Mesh(new THREE.CircleGeometry(rand(.6, 1.8), 18), puddleMat);
+  pd.rotation.x = -Math.PI / 2; pd.scale.set(1, rand(.4, 1), 1); pd.position.set(rand(-5.5, 5.5), .012, rand(-220, 0)); scene.add(pd);
+}
+
+// buildings + shopfronts
+const SHOPS = {
+  right: [[2, 'KEBABS', '#ff3b6b', 'lit'], [-30, 'THE BLOOD TUB', '#ffb13b', 'lit'], [-58, 'OFFIE', '#7cff4f', 'lit'], [-92, 'TANNING', '#ff4fd8', 'dark'],
+          [-120, 'CHIPPY', '#ffb13b', 'lit'], [-150, 'BOOKIES', '#39e0ff', 'shutter'], [-178, 'PIZZA', '#ff6a3b', 'lit'], [-204, 'BAR', '#ff4fd8', 'lit']],
+  left:  [[-8, 'VAPES', '#7cff4f', 'lit'], [-36, 'PAWN', '#ffe14f', 'shutter'], [-76, 'NITECLUB', '#39e0ff', 'lit'], [-106, 'BAKERY', '#39a0ff', 'dark'],
+          [-136, 'CASH 4 GOLD', '#ffe14f', 'lit'], [-164, 'TO LET', '#bbbbbb', 'dark'], [-196, 'KARAOKE', '#b06bff', 'lit'], [-220, 'TAXIS', '#7cff4f', 'lit']]
+};
+const BRICKS = [['#7a3a2a', '#3a2a28'], ['#8a4a32', '#40302c'], ['#5e4a5a', '#2c2430'], ['#6a5040', '#33281f'], ['#4c4a5c', '#26242e']];
+for (const side of ['left', 'right']) {
+  const sx = side === 'left' ? -1 : 1, list = SHOPS[side];
+  for (let i = 0; i < list.length; i++) {
+    const [z0, name, neon, kind] = list[i];
+    const zNext = i + 1 < list.length ? list[i + 1][0] : END_Z - 6;
+    const len = Math.abs(zNext - z0) - (Math.random() < .5 ? 2.2 : 0);       // occasional alley gap
+    const zc = z0 - len / 2 + 4, floors = pick([2, 3, 3, 4]), hgt = 3.6 + floors * 3;
+    const [bc, mc] = pick(BRICKS);
+    const bmat = lam({ map: facadeTex(bc, floors, .45) });
+    const plain = lam({ map: brickTex(bc, mc) });
+    const geo = new THREE.BoxGeometry(10, hgt, len);
+    // material order: +x, -x, +y, -y, +z, -z ; street face is -x for right side, +x for left side
+    const mats = [plain, plain, lam({ color: 0x1a1520 }), plain, plain, plain];
+    mats[sx > 0 ? 1 : 0] = bmat;
+    const b = new THREE.Mesh(geo, mats); b.position.set(sx * 15, hgt / 2, zc); scene.add(b);
+    // shopfront
+    const shop = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(len - .6, 9), 3.6), lam({ map: shopTex(name, neon, kind), emissive: 0xffffff, emissiveIntensity: .6, emissiveMap: null }));
+    shop.material.emissiveMap = shop.material.map;
+    shop.position.set(sx * 9.98, 1.95, zc); shop.rotation.y = -sx * Math.PI / 2; scene.add(shop);
+    if (kind !== 'dark') { neonSpots.push({ pos: new THREE.Vector3(sx * 8.4, 3.4, zc), color: new THREE.Color(neon), flick: name === 'NITECLUB' || name === 'KARAOKE' });
+      const glow = new THREE.Sprite(glowMat(neon)); glow.position.set(sx * 9.6, 3.4, zc); glow.scale.set(8, 3, 1); scene.add(glow); }
+    addCollider(sx * 15, zc, 10, len);
+  }
+}
+endWall(END_Z - 1, 'TAXI RANK'); endWall(START_Z + 3, null);
+streetLamps();
 [[7.6, -12], [-7.6, -26], [7.6, -48], [-7.6, -66], [7.6, -84], [-7.6, -118], [7.6, -132], [-7.6, -150], [7.6, -170], [-7.6, -186], [7.6, -196]].forEach(([x, z]) => bin(x, z));
 [[-8.6, -42], [8.6, -112], [-8.6, -142]].forEach(([x, z]) => bench(x, z));
 for (let i = 0; i < 14; i++) cone(rand(-5, 5), rand(-210, -10));
@@ -247,6 +253,184 @@ const coachMesh = coach(2.6, -172);
 // litter: kebab boxes & chip papers
 const litterMat = [lam({ color: 0xf2e6c8 }), lam({ color: 0xe8e2d0 }), lam({ color: 0xc8102e })];
 for (let i = 0; i < 70; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(rand(.15, .3), .05, rand(.15, .3)), pick(litterMat)); m.position.set(rand(-9, 9), .1, rand(-222, 2)); m.rotation.y = rand(0, 6); scene.add(m); }
+
+}
+
+// ---------------------------------------------------------------- level 2: Parr (and the Burgies)
+function groundTex(base, speck, rep) {
+  return canvasTex(256, 256, (g, w, h) => { g.fillStyle = base; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 3000; i++) { g.fillStyle = `rgba(${speck},${rand(.05, .25)})`; g.fillRect(rand(0, w), rand(0, h), rand(1, 4), rand(1, 3)); } }, rep);
+}
+function houseTex(base, lit) {
+  return canvasTex(256, 192, (g, w, h) => {
+    g.fillStyle = base; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 1400; i++) { g.fillStyle = `rgba(0,0,0,${rand(0, .1)})`; g.fillRect(rand(0, w), rand(0, h), 2, 2); }   // pebbledash
+    const win = (x, y, ww, hh) => { const on = Math.random() < lit; g.fillStyle = '#e8e8e8'; g.fillRect(x - 4, y - 4, ww + 8, hh + 8);
+      g.fillStyle = on ? pick(['#ffd479', '#ffe7a8', '#9fd2ff', '#ff9fd0']) : '#15131c'; g.fillRect(x, y, ww, hh);
+      g.fillStyle = '#e8e8e8'; g.fillRect(x + ww / 2 - 2, y, 4, hh); if (on && Math.random() < .5) { g.fillStyle = 'rgba(80,20,20,.45)'; g.fillRect(x, y, ww / 2 - 2, hh); } };
+    win(30, 22, 70, 46); win(156, 22, 70, 46); win(30, 112, 70, 50);
+    g.fillStyle = pick(['#7a1e1e', '#1e3a7a', '#e8e8e8', '#1e5a2a']); g.fillRect(166, 104, 44, 88); g.fillStyle = '#ffd400'; g.fillRect(200, 148, 4, 4);
+    g.fillStyle = '#3a3440'; g.fillRect(0, 92, w, 6);
+  });
+}
+const PARR = { trolley: lam({ color: 0xb8b8c0 }), burnt: lam({ color: 0x1a1414 }), rust: lam({ color: 0x5a2a14 }), ember: new THREE.MeshBasicMaterial({ color: 0xff7a1a }),
+  mattress: lam({ color: 0xd8d2c0 }), stain: lam({ color: 0x9a8a5a }), fence: lam({ color: 0x4a3a28 }), tent: [lam({ color: 0x2a8a3a }), lam({ color: 0xd8301a }), lam({ color: 0x2a5ad8 })],
+  rock: lam({ color: 0x2c2826 }), heap: lam({ map: groundTex('#4a423c', '170,150,130', [6, 6]) }), log: lam({ color: 0x3a2412 }), fire: new THREE.MeshBasicMaterial({ color: 0xffa020 }),
+  float: lam({ color: 0xf2f2f2 }), floatTrim: lam({ color: 0x1a7a3a }), crate: lam({ color: 0x2a5ad8 }), milk: lam({ color: 0xfafafa }) };
+function trolley(x, z, r = 0) { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(.6, .5, .9), PARR.trolley); b.position.y = .75; g.add(b);
+  for (const wx of [-.25, .25]) for (const wz of [-.4, .4]) { const l = new THREE.Mesh(new THREE.BoxGeometry(.04, .5, .04), PARR.trolley); l.position.set(wx, .25, wz); g.add(l); }
+  const h = new THREE.Mesh(new THREE.BoxGeometry(.6, .05, .05), PARR.trolley); h.position.set(0, 1.05, -.5); g.add(h); g.position.set(x, 0, z); g.rotation.set(0, r, Math.random() < .4 ? 1.4 : 0); scene.add(g); }
+function burntCar(x, z, r = 0) { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(1.9, .8, 4.2), PARR.burnt); b.position.y = .55; g.add(b);
+  const c = new THREE.Mesh(new THREE.BoxGeometry(1.7, .6, 2), PARR.rust); c.position.set(0, 1.25, -.2); g.add(c);
+  for (let i = 0; i < 5; i++) { const e = new THREE.Mesh(new THREE.BoxGeometry(.12, .06, .12), PARR.ember); e.position.set(rand(-.7, .7), .97, rand(-1.6, 1.6)); g.add(e); }
+  g.position.set(x, 0, z); g.rotation.y = r; scene.add(g); addCollider(x, z, r ? 4.3 : 2.0, r ? 2.0 : 4.3);
+  neonSpots.push({ pos: new THREE.Vector3(x, 1.6, z), color: new THREE.Color(0xff6a1a), flick: true }); }
+function mattress(x, z) { const m = new THREE.Mesh(new THREE.BoxGeometry(1.4, .22, 2), PARR.mattress); m.position.set(x, .12, z); m.rotation.y = rand(-.5, .5); scene.add(m);
+  const s = new THREE.Mesh(new THREE.CircleGeometry(.35, 8), PARR.stain); s.rotation.x = -Math.PI / 2; s.position.set(x + .2, .24, z + .3); scene.add(s); }
+function campfire(x, z) {
+  for (let i = 0; i < 4; i++) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.08, .08, 1.1, 6), PARR.log); l.rotation.z = Math.PI / 2; l.rotation.y = i * .8; l.position.set(x, .1, z); scene.add(l); }
+  const f = new THREE.Mesh(new THREE.ConeGeometry(.35, .9, 7), PARR.fire); f.position.set(x, .5, z); scene.add(f);
+  const gl = new THREE.Sprite(glowMat('#ff8a2a')); gl.position.set(x, .9, z); gl.scale.set(4, 3, 1); scene.add(gl);
+  neonSpots.push({ pos: new THREE.Vector3(x, 1.4, z), color: new THREE.Color(0xff8a2a), flick: true }); addCollider(x, z, .9, .9); }
+function tent(x, z, r) { const t = new THREE.Mesh(new THREE.ConeGeometry(1.3, 1.5, 4), pick(PARR.tent)); t.position.set(x, .75, z); t.rotation.y = r; scene.add(t); addCollider(x, z, 1.8, 1.8); }
+function heap(x, z, r, h) { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), PARR.heap); m.scale.y = h; m.position.set(x, -.3, z); scene.add(m); }
+function milkFloat(x, z) {
+  const g = new THREE.Group();
+  const b = new THREE.Mesh(new THREE.BoxGeometry(1.9, .5, 4.2), PARR.float); b.position.y = .55; g.add(b);
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.4, 1.2), PARR.float); cab.position.set(0, 1.5, 1.4); g.add(cab);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(2, .12, 4.4), PARR.floatTrim); roof.position.y = 2.25; g.add(roof);
+  for (const px of [-.9, .9]) for (const pz of [-2, 0]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.08, 1.4, .08), PARR.floatTrim); p.position.set(px, 1.5, pz); g.add(p); }
+  for (let i = 0; i < 6; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(.5, .35, .5), PARR.crate); c.position.set(-.5 + (i % 2), 1, -1.8 + Math.floor(i / 2) * .7); g.add(c);
+    for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, .3, 6), PARR.milk); m.position.set(c.position.x - .12 + (k % 2) * .24, 1.3, c.position.z - .12 + (k >> 1) * .24); g.add(m); } }
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.6, .6), lam({ map: shopTex('MILK', '#1a7a3a', 'dark'), emissive: 0xffffff, emissiveIntensity: .4 })); sign.material.emissiveMap = sign.material.map;
+  sign.position.set(-.96, 1.9, -.6); sign.rotation.y = -Math.PI / 2; g.add(sign);
+  for (const wx of [-.95, .95]) for (const wz of [-1.4, 1.4]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .2, 12), PROPMAT.tyre); w.rotation.z = Math.PI / 2; w.position.set(wx, .3, wz); g.add(w); }
+  g.position.set(x, 0, z); g.rotation.y = -Math.PI / 2; scene.add(g); return g;
+}
+function buildParr() {
+  scene.background.set(0x0c0f24); scene.fog.color.set(0x1a2040); scene.fog.density = .018;
+  hemi.color.set(0x8a9ad8); hemi.groundColor.set(0x3a3028); hemi.intensity = 1.9; ambient.intensity = 1.2; moon.intensity = .7;
+  // estate road, pavements, front gardens
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(12, 112), lam({ map: groundTex('#2c2a30', '120,120,130', [2, 18]) })); road.rotation.x = -Math.PI / 2; road.position.set(0, 0, -50); scene.add(road);
+  const grass = lam({ map: groundTex('#1f3a1c', '90,140,70', [2, 20]) });
+  for (const s of [-1, 1]) { const g = new THREE.Mesh(new THREE.BoxGeometry(4, .12, 112), grass); g.position.set(s * 8, .06, -50); scene.add(g);
+    const k = new THREE.Mesh(new THREE.BoxGeometry(.25, .16, 112), lam({ color: 0x8a8590 })); k.position.set(s * 6.05, .08, -50); scene.add(k); }
+  // the Burgies: shale everywhere
+  const shale = new THREE.Mesh(new THREE.PlaneGeometry(60, 140), lam({ map: groundTex('#3a3430', '160,140,120', [8, 18]) })); shale.rotation.x = -Math.PI / 2; shale.position.set(0, -.01, -170); scene.add(shale);
+  // council semis
+  const BASES = ['#bdb6a8', '#c9c2b0', '#a8a49a', '#d2c8b4', '#b0a898'];
+  for (const sx of [-1, 1]) for (let z = 2; z > -96; z -= 12) {
+    const len = 9.5, zc = z - len / 2, hgt = 6.4;
+    const front = lam({ map: houseTex(pick(BASES), .4) }), plain = lam({ color: 0x9a948a }), roof = lam({ color: 0x3a2a2a });
+    const mats = [plain, plain, roof, plain, plain, plain]; mats[sx > 0 ? 1 : 0] = front;
+    const b = new THREE.Mesh(new THREE.BoxGeometry(10, hgt, len), mats); b.position.set(sx * 15, hgt / 2, zc); scene.add(b);
+    const r = new THREE.Mesh(new THREE.CylinderGeometry(.01, 5.4, 2.4, 4, 1), roof); r.rotation.y = Math.PI / 4; r.scale.z = len / 7.6; r.position.set(sx * 15, hgt + 1.2, zc); scene.add(r);
+    addCollider(sx * 15, zc, 10, len);
+    // garden fence
+    const f = new THREE.Mesh(new THREE.BoxGeometry(.08, .8, len), PARR.fence); f.position.set(sx * 9.95, .4, zc); scene.add(f);
+  }
+  // corner shops on the estate
+  [[-1, -30, 'RAMFORD', '#ffb13b', 'lit'], [1, -54, 'OFFIE', '#7cff4f', 'lit'], [-1, -78, 'CHIPPY', '#39e0ff', 'shutter']].forEach(([sx, z, name, neon, kind]) => {
+    const shop = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 3.6), lam({ map: shopTex(name, neon, kind), emissive: 0xffffff, emissiveIntensity: .6 })); shop.material.emissiveMap = shop.material.map;
+    shop.position.set(sx * 9.9, 1.95, z); shop.rotation.y = -sx * Math.PI / 2; scene.add(shop);
+    neonSpots.push({ pos: new THREE.Vector3(sx * 8.4, 3.4, z), color: new THREE.Color(neon), flick: false });
+    const glow = new THREE.Sprite(glowMat(neon)); glow.position.set(sx * 9.5, 3.4, z); glow.scale.set(8, 3, 1); scene.add(glow);
+  });
+  streetLamps(-4, -100);
+  // the way onto the Burgies: broken fence and a sign
+  for (const sx of [-1, 1]) { const f = new THREE.Mesh(new THREE.BoxGeometry(6, 1.2, .1), PARR.fence); f.position.set(sx * 7, .6, -99); f.rotation.y = sx * .15; scene.add(f); }
+  const keep = new THREE.Mesh(new THREE.PlaneGeometry(4, 1.2), lam({ map: shopTex('THE BURGIES', '#ff3b3b', 'dark'), side: THREE.DoubleSide })); keep.position.set(-6.5, 2, -99.2); scene.add(keep);
+  // spoil heaps: walls of the level, plus cover on the path
+  for (const sx of [-1, 1]) for (let z = -100; z > -240; z -= 10) heap(sx * rand(17, 20), z + rand(-3, 3), rand(9, 12), rand(.5, .75));
+  for (const sx of [-1, 1]) for (let z = -104; z > -232; z -= 10) addCollider(sx * 14, z, 9, 10);
+  heap(0, -250, 18, .7); heap(-8, -238, 10, .9); heap(9, -237, 10, .8);
+  [[-4.5, -118, 2.4], [5, -134, 2], [-3, -160, 2.6], [4.5, -176, 2.2], [-6, -196, 2]].forEach(([x, z, r]) => { heap(x, z, r, .55); addCollider(x, z, r * 1.3, r * 1.3); });
+  for (let i = 0; i < 30; i++) { const rk = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(.15, .45)), PARR.rock); rk.position.set(rand(-9, 9), .1, rand(-228, -104)); rk.rotation.set(rand(0, 3), rand(0, 3), 0); scene.add(rk); }
+  campfire(-6, -112); campfire(6.5, -150); campfire(-6.5, -182); campfire(3, -212);
+  tent(-7.5, -116, .3); tent(7.6, -146, 1); tent(-8, -186, .6);
+  // the nest
+  const hole = new THREE.Mesh(new THREE.CircleGeometry(2.4, 18), new THREE.MeshBasicMaterial({ color: 0x050302 })); hole.position.set(0, 1.8, -232.1); hole.rotation.x = -.35; scene.add(hole);
+  const nestGlow = new THREE.Sprite(glowMat('#ff3b3b')); nestGlow.position.set(0, 1.8, -231); nestGlow.scale.set(7, 4, 1); scene.add(nestGlow);
+  // estate props
+  [[7.6, -12], [-7.6, -24], [7.6, -46], [-7.6, -66], [7.6, -88]].forEach(([x, z]) => bin(x, z));
+  burntCar(-3.5, -40, .4); burntCar(3.8, -84, -.2);
+  trolley(4, -20, .6); trolley(-5, -58, 2); trolley(5.5, -122, 1); trolley(-2, -205, 3);
+  mattress(-7.8, -36); mattress(7.8, -72); mattress(-5, -168);
+  for (let i = 0; i < 40; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(rand(.15, .3), .05, rand(.15, .3)), pick([PROPMAT.metal, PARR.mattress])); m.position.set(rand(-9, 9), .08, rand(-226, 2)); m.rotation.y = rand(0, 6); scene.add(m); }
+  endWall(START_Z + 3, null);
+}
+
+// ---------------------------------------------------------------- level 3: Taylor Park
+const PARK = { trunk: lam({ color: 0x3a2a1c }), leaf: [lam({ color: 0x1e3a1a }), lam({ color: 0x24461e }), lam({ color: 0x2c4a22 })], rail: lam({ color: 0x15171a }),
+  water: new THREE.MeshPhongMaterial({ color: 0x0e2238, specular: 0x8aa8ff, shininess: 80 }), stone: lam({ color: 0x8a8478 }), roofR: lam({ color: 0x8a1a1a }), roofG: lam({ color: 0x1e4a2a }),
+  white: lam({ color: 0xe8e4d8 }), bus: lam({ color: 0xd8a01a }), hedge: lam({ color: 0x1a301a }) };
+function tree(x, z, s = 1, collide = true) {
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(.18 * s, .28 * s, 3 * s, 7), PARK.trunk); t.position.set(x, 1.5 * s, z); scene.add(t);
+  for (let i = 0; i < 3; i++) { const l = new THREE.Mesh(new THREE.IcosahedronGeometry(rand(1.3, 1.9) * s, 0), pick(PARK.leaf)); l.position.set(x + rand(-.8, .8) * s, (3.2 + i * .8) * s, z + rand(-.8, .8) * s); l.rotation.set(rand(0, 3), rand(0, 3), 0); scene.add(l); }
+  if (collide) addCollider(x, z, .6 * s, .6 * s);
+}
+function railings(x, z0, z1) {
+  for (let z = z0; z > z1; z -= .45) { const b = new THREE.Mesh(new THREE.BoxGeometry(.05, 1.4, .05), PARK.rail); b.position.set(x, .7, z); scene.add(b); }
+  for (const y of [.2, 1.25]) { const r = new THREE.Mesh(new THREE.BoxGeometry(.06, .06, z0 - z1), PARK.rail); r.position.set(x, y, (z0 + z1) / 2); scene.add(r); }
+}
+function vicLamp(x, z) {
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(.07, .14, 4, 8), PARK.rail); post.position.set(x, 2, z); scene.add(post);
+  const head = new THREE.Mesh(new THREE.CylinderGeometry(.25, .15, .5, 6), lampHead); head.position.set(x, 4.2, z); scene.add(head);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(.32, .3, 6), PARK.rail); cap.position.set(x, 4.6, z); scene.add(cap);
+  const pool = new THREE.Sprite(glowMat('#ffd080')); pool.position.set(x, 4.2, z); pool.scale.set(2, 1.6, 1); scene.add(pool);
+  lampSpots.push({ pos: new THREE.Vector3(x, 4, z) }); addCollider(x, z, .35, .35);
+}
+function bandstand(x, z) {
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.3, .6, 8), PARK.stone); base.position.set(x, .3, z); scene.add(base);
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + Math.PI / 8; const p = new THREE.Mesh(new THREE.CylinderGeometry(.08, .08, 2.8, 6), PARK.white); p.position.set(x + Math.cos(a) * 2.8, 2, z + Math.sin(a) * 2.8); scene.add(p); }
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(3.6, 1.6, 8), PARK.roofG); roof.position.set(x, 4.2, z); scene.add(roof);
+  const trim = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, .25, 8), PARK.roofR); trim.position.set(x, 3.4, z); scene.add(trim);
+  neonSpots.push({ pos: new THREE.Vector3(x, 3, z), color: new THREE.Color(0xffe0a0), flick: false });
+  addCollider(x, z, 5.6, 5.6);
+}
+function nightBus(x, z) {
+  const g = new THREE.Group();
+  const b = new THREE.Mesh(new THREE.BoxGeometry(2.6, 3, 11), PARK.bus); b.position.y = 1.8; g.add(b);
+  const win = new THREE.Mesh(new THREE.BoxGeometry(2.64, .9, 10), PROPMAT.taxiGlass); win.position.y = 2.4; g.add(win);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(9, 1), lam({ map: shopTex('N1 BILLINGE', '#ffb13b', 'dark'), emissive: 0xffffff, emissiveIntensity: .4 })); sign.material.emissiveMap = sign.material.map;
+  sign.position.set(1.32, 3.1, 0); sign.rotation.y = Math.PI / 2; g.add(sign);
+  for (const wz of [-3.8, 3.8]) for (const wx of [-1.3, 1.3]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .3, 12), PROPMAT.tyre); w.rotation.z = Math.PI / 2; w.position.set(wx, .5, wz); g.add(w); }
+  g.position.set(x, 0, z); g.rotation.y = -Math.PI / 2; scene.add(g); return g;
+}
+function buildPark() {
+  scene.background.set(0x081018); scene.fog.color.set(0x122028); scene.fog.density = .024;
+  hemi.color.set(0x7ab0a8); hemi.groundColor.set(0x1a2a18); ambient.color.set(0x34503e);
+  const grass = new THREE.Mesh(new THREE.PlaneGeometry(60, 250), lam({ map: groundTex('#1c3a1a', '110,160,80', [10, 40]) })); grass.rotation.x = -Math.PI / 2; grass.position.set(0, 0, -112); scene.add(grass);
+  const path = new THREE.Mesh(new THREE.PlaneGeometry(5, 236), lam({ map: groundTex('#4a4440', '150,140,130', [1, 40]) })); path.rotation.x = -Math.PI / 2; path.position.set(-1, .01, -112); scene.add(path);
+  // perimeter: railings and a wall of trees
+  railings(-10, 4, -228); railings(10, 4, -110); railings(10, -146, -228);
+  for (const sx of [-1, 1]) for (let z = 2; z > -232; z -= 5) tree(sx * rand(12, 16), z + rand(-2, 2), rand(1.1, 1.5), false);
+  for (const sx of [-1, 1]) for (let z = -6; z > -232; z -= 7) tree(sx * rand(18, 24), z, rand(1.3, 1.8), false);
+  // trees inside the park for cover
+  [[-6.5, -26], [5.5, -38], [-7, -70], [6.5, -84], [-5.5, -96], [6.8, -158], [-7.5, -178], [5.8, -200], [-6.8, -210]].forEach(([x, z]) => tree(x, z, rand(.9, 1.2)));
+  // the boating lake (right-hand side; the geese live here)
+  const lake = new THREE.Mesh(new THREE.PlaneGeometry(16, 34), PARK.water); lake.rotation.x = -Math.PI / 2; lake.position.set(10.5, .03, -128); scene.add(lake);
+  const lakeEdge = new THREE.Mesh(new THREE.BoxGeometry(.4, .35, 34), PARK.stone); lakeEdge.position.set(2.6, .17, -128); scene.add(lakeEdge);
+  for (const z of [-111, -145]) { const e = new THREE.Mesh(new THREE.BoxGeometry(8, .35, .4), PARK.stone); e.position.set(6.6, .17, z); scene.add(e); }
+  addCollider(6.2, -128, 6.6, 34);
+  const lakeSign = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), lam({ map: shopTex('BOATING LAKE', '#39e0ff', 'dark'), emissive: 0xffffff, emissiveIntensity: .3, side: THREE.DoubleSide })); lakeSign.material.emissiveMap = lakeSign.material.map;
+  lakeSign.position.set(2.2, 1.6, -108); scene.add(lakeSign);
+  neonSpots.push({ pos: new THREE.Vector3(4, 2, -120), color: new THREE.Color(0x5a8aff), flick: false }, { pos: new THREE.Vector3(4, 2, -138), color: new THREE.Color(0x5a8aff), flick: false });
+  bandstand(-4.5, -166);
+  // gates
+  for (const sx of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(1.2, 4, 1.2), PARK.stone); p.position.set(sx * 4.2, 2, 3); scene.add(p); }
+  const gate = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.2), lam({ map: shopTex('TAYLOR PARK', '#ffd479', 'dark'), emissive: 0xffffff, emissiveIntensity: .35, side: THREE.DoubleSide })); gate.material.emissiveMap = gate.material.map; gate.position.set(0, 4.4, 3); scene.add(gate);
+  for (let z = -8; z > -224; z -= 16) { vicLamp(-4.2, z); vicLamp(2.4, z - 8); }
+  [[-8.4, -20], [8.4, -60], [-8.4, -104], [-8.4, -150], [8.4, -190]].forEach(([x, z]) => bench(x, z));
+  [[3.6, -30], [-3.8, -64], [3.6, -100], [-3.6, -140], [3.6, -184]].forEach(([x, z]) => bin(x, z));
+  for (let i = 0; i < 40; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(rand(.1, .25), .04, rand(.1, .25)), pick([lam({ color: 0x8a6a2a }), lam({ color: 0xb8b8c0 }), PARK.white])); l.position.set(rand(-9, 9), .05, rand(-224, 2)); l.rotation.y = rand(0, 6); scene.add(l); }
+  // far side: hedge and the bus stop
+  const hedge = new THREE.Mesh(new THREE.BoxGeometry(30, 2.2, 2), PARK.hedge); hedge.position.set(0, 1.1, END_Z - 6); scene.add(hedge);
+  endWall(END_Z - 12, 'BUS STOP'); endWall(START_Z + 6, null);
+  const stopGlow = new THREE.Sprite(glowMat('#7cff4f')); stopGlow.position.set(0, 4.5, END_Z - 10); stopGlow.scale.set(10, 3, 1); scene.add(stopGlow);
+}
+
+({ 1: buildStreet, 2: buildParr, 3: buildPark })[LEVEL_N]();
 
 // rain
 const RAIN = 1400, rainGeo = new THREE.BufferGeometry(), rainPos = new Float32Array(RAIN * 3);
@@ -329,7 +513,8 @@ const SFX = {
   splat: () => { noise(.22, 700, 'lowpass', .9, 200); tone(90, .12, 'sine', .25, 50); }, hurt: () => { tone(180, .25, 'sawtooth', .18, 70); noise(.1, 500, 'lowpass', .4); },
   pickup: () => { tone(660, .08, 'square', .1); setTimeout(() => tone(990, .12, 'square', .1), 70); }, boom: () => { noise(.7, 400, 'lowpass', 1.2, 60); tone(70, .6, 'sine', .4, 30); },
   ko: () => { tone(400, .1, 'square', .08); setTimeout(() => tone(300, .1, 'square', .08), 90); setTimeout(() => tone(200, .25, 'square', .08), 180); },
-  click: () => tone(1200, .03, 'square', .05), wave: () => { tone(330, .15, 'square', .1); setTimeout(() => tone(440, .25, 'square', .1), 150); },
+  click: () => tone(1200, .03, 'square', .05), honk: (big) => { tone(big ? 210 : 330, .22, 'sawtooth', .16, big ? 150 : 250); setTimeout(() => tone(big ? 190 : 300, .18, 'sawtooth', .14, big ? 130 : 220), 160); },
+  hiss: () => noise(.3, 3500, 'highpass', .35), wave: () => { tone(330, .15, 'square', .1); setTimeout(() => tone(440, .25, 'square', .1), 150); },
 };
 
 // ---------------------------------------------------------------- player + weapons
@@ -396,8 +581,15 @@ const decals = [];
 const PIE_GEO = new THREE.CylinderGeometry(.16, .13, .08, 12), PIE_MAT = lam({ color: 0xd9a441 });
 const BARM_GEO = new THREE.SphereGeometry(.16, 10, 8), BARM_MAT = lam({ color: 0xe8d2a0 });
 const STIL_GEO = new THREE.BoxGeometry(.06, .18, .32), STIL_MAT = lam({ color: 0xd11a2a });
+const PROJ = {
+  barm: { geo: BARM_GEO, mat: BARM_MAT, speed: 12, g: 9.8, burst: 'barm', hit: ['Barm to the face!', 'Bapped!'] },
+  stiletto: { geo: STIL_GEO, mat: STIL_MAT, speed: 18, g: 3, burst: 'gravy', hit: ['Stilettoed!', 'Heel to the head!'] },
+  can: { geo: new THREE.CylinderGeometry(.07, .07, .22, 10), mat: lam({ color: 0xc8ccd8, emissive: 0x222222 }), speed: 15, g: 7, burst: 'can', hit: ['Canned!', 'Tinny to the head!', 'Full can, that!'] },
+  slipper: { geo: new THREE.BoxGeometry(.14, .08, .32), mat: lam({ color: 0xff8fc8 }), speed: 13, g: 6, burst: 'barm', hit: ['Slippered!', 'Your mam\'s slipper!', 'Right in the earhole!'] },
+  acid: { geo: new THREE.SphereGeometry(.18, 8, 6), mat: new THREE.MeshBasicMaterial({ color: 0x9aff2a }), speed: 11, g: 6, burst: 'acid', hit: ['Ant spit!', 'Acid in the eye!', 'Urgh, ant goo!'] },
+};
 const PART_GEO = new THREE.BoxGeometry(.07, .07, .07);
-const partMats = { pie: lam({ color: 0xc89434 }), gravy: lam({ color: 0x6b3a12 }), pea: lam({ color: 0x4caf2a }), barm: lam({ color: 0xf2e2b8 }), star: new THREE.MeshBasicMaterial({ color: 0xffe16b }) };
+const partMats = { pie: lam({ color: 0xc89434 }), gravy: lam({ color: 0x6b3a12 }), pea: lam({ color: 0x4caf2a }), barm: lam({ color: 0xf2e2b8 }), star: new THREE.MeshBasicMaterial({ color: 0xffe16b }), can: lam({ color: 0xc8ccd8 }), acid: new THREE.MeshBasicMaterial({ color: 0x9aff2a }), feather: lam({ color: 0xd8d0c4 }) };
 function burst(pos, kind, n = 12, spd = 4) {
   for (let i = 0; i < n; i++) {
     const m = new THREE.Mesh(PART_GEO, partMats[kind]); m.position.copy(pos); scene.add(m);
@@ -486,17 +678,41 @@ const TYPES = {
   bride: { hp: 420, speed: 4.0, scale: 1.05, range: [2, 9], dmg: 12, cd: [.55, 1.0], score: 2000, proj: 'stiletto', boss: true,
     quips: ['IT\'S MY HEN DO!!', 'NOBODY RUINS MY HEN DO!', 'I\'M THE BRIDE!!', 'SHOTS! SHOTS! SHOTS!', 'Get him, girls!'],
     hit: ['ME VEIL!', 'Do you know how much this cost?!', 'RIGHT!'], },
+  // level 2: Parr
+  scally: { hp: 45, speed: 3.6, range: [6, 13], dmg: 8, cd: [1.3, 2.4], score: 120, proj: 'can',
+    quips: ['Ey you! What you lookin at?', 'Is that your bike, mate?', 'Giz a pie!', 'You\'re not from round ere!', 'PARR MASSIVE!', 'Me mam\'ll batter you!'],
+    hit: ['Me trackie!', 'Not the cap!', 'Ow! I\'m tellin\'!'] },
+  mum: { hp: 95, speed: 3.3, range: [2, 9], dmg: 10, cd: [.9, 1.6], score: 250, proj: 'slipper', mixed: true, meleeLines: ['Rolling-pinned!', 'Your tea\'s in the dog!', 'Clipped round the ear!'],
+    quips: ['GET IN THIS HOUSE!', 'Do you know what time it is?!', 'I\'ll ring your mother!', 'I\'ve just had me hair done!', 'KEEP IT DOWN!'],
+    hit: ['Me curlers!', 'Me best dressing gown!', 'RIGHT. That\'s it.'] },
+  ant: { hp: 45, speed: 5.2, range: [0, 1.7], dmg: 8, cd: [.7, 1.2], score: 120, melee: true, sfx: 'hiss', creature: () => makeAnt('ant'), meleeLines: ['Bitten!', 'Nipped by an ant!'],
+    quips: ['SKREEEE!', '*click click click*', 'HSSSSS!'], hit: ['SKRK!', '*angry clicking*'] },
+  spitter: { hp: 60, speed: 3, range: [7, 14], dmg: 10, cd: [1.2, 2], score: 200, proj: 'acid', mouthY: .9, creature: () => makeAnt('spitter'),
+    quips: ['*gurgle*', 'HSSSS-PTOO!'], hit: ['*splutter*'] },
+  soldier: { hp: 170, speed: 3.7, range: [0, 2.2], dmg: 16, cd: [1, 1.5], score: 400, melee: true, sfx: 'hiss', creature: () => makeAnt('soldier'), meleeLines: ['Snapped by the big un!', 'Pincered!'],
+    quips: ['*CLACK CLACK*', 'SKRAAAA!'], hit: ['*furious clacking*'] },
+  queen: { hp: 950, speed: 1.6, range: [5, 13], dmg: 14, cd: [.9, 1.5], score: 3000, proj: 'acid', boss: true, spawner: 'ant', mouthY: 2, bubbleY: 1.75, creature: () => makeAnt('queen'),
+    quips: ['SKREEEEEEEEE!!!', '*furious royal clicking*', '*the Burgies shake*'], hit: ['SKRAAAK!', '*royal hissing*'] },
+  // level 3: Taylor Park
+  goose: { hp: 50, speed: 5.6, range: [0, 1.6], dmg: 9, cd: [.6, 1.1], score: 150, melee: true, sfx: 'honk', creature: () => makeGoose('goose'), meleeLines: ['Goosed!', 'Pecked!', 'Wing-slapped!'],
+    quips: ['HONK!', 'HOOOONK!', 'HSSSSS!', '*aggressive honking*'], hit: ['HONK?!', '*indignant honk*'] },
+  mothergoose: { hp: 1000, speed: 3.6, range: [0, 3.2], dmg: 18, cd: [1, 1.6], score: 3000, melee: true, boss: true, spawner: 'goose', sfx: 'honk', bubbleY: 2.2, creature: () => makeGoose('mothergoose'), meleeLines: ['MOTHER GOOSE SAYS NO!', 'Flattened!', 'Honked into next week!'],
+    quips: ['HOOOOOOOONK!!!', 'THIS IS MY PARK!', '*HONKS IN GOOSE*', 'HONK. HONK. HONK.'], hit: ['*outraged honking*', 'HONK!!'] },
+  keeper: { hp: 130, speed: 2.7, range: [0, 1.7], dmg: 14, cd: [1.1, 1.6], score: 300, melee: true, meleeLines: ['Clipped by a keeper!', 'Escorted off the premises!', 'Whistled at, then walloped!'],
+    quips: ['Keep off the grass!', 'Park\'s shut, lad!', 'No ball games!', 'Can you not read the sign?', 'I\'ve got a whistle and I\'ll use it!'], hit: ['That\'s council property!', 'Right, you\'re banned!', 'Oi!'] },
+  drinker: { hp: 60, speed: 2.8, range: [6, 12], dmg: 9, cd: [1.4, 2.4], score: 150, proj: 'can',
+    quips: ['Spare us 20p, mate?', 'This is MY bench!', 'Wanna can?', 'I\'ve been sat here since 1987!'], hit: ['Me cider!', 'Ow, me can!'] },
 };
 function spawn(type, x, z, delay = 0) {
-  const T = TYPES[type], c = makeCharacter(type), g = c.root; g.position.set(x, 0, z); scene.add(g);
+  const T = TYPES[type], c = T.creature ? T.creature() : makeCharacter(type), g = c.root; g.position.set(x, 0, z); scene.add(g);
   const e = { type, T, g, c, hp: T.hp, max: T.hp, scale: c.scale, throwT: 0, cd: rand(.6, 1.6) + delay, dead: false, deadT: 0, walk: rand(0, 6), strafe: Math.random() < .5 ? 1 : -1,
-    strafeT: rand(1, 3), sayT: 0, bubble: null, attackT: 0, hitT: 0, delay };
+    strafeT: rand(1, 3), sayT: 0, bubble: null, attackT: 0, hitT: 0, spawnT: 4, delay };
   g.visible = delay <= 0;
   enemies.push(e); return e;
 }
 function say(e, text) {
   if (e.bubble) { e.g.remove(e.bubble); e.bubble.material.map.dispose(); }
-  e.bubble = textSprite(text, '#111', e.T.boss ? '#ffe3f2' : '#ffffff'); e.bubble.position.set(0, 2.75, 0); e.bubble.scale.multiplyScalar(1 / e.scale);
+  e.bubble = textSprite(text, '#111', e.T.boss ? '#ffe3f2' : '#ffffff'); e.bubble.position.set(0, e.T.bubbleY || 2.75, 0); e.bubble.scale.multiplyScalar(1 / e.scale);
   e.g.add(e.bubble); e.sayT = 2.2;
 }
 function damageEnemy(e, dmg, dir) {
@@ -507,21 +723,23 @@ function damageEnemy(e, dmg, dir) {
   if (Math.random() < .2) say(e, pick(e.T.hit));
   if (e.hp <= 0) {
     e.dead = true; e.deadT = 0; e.throwT = 0; e.c.ctl.once(Math.random() < .5 ? 'Death_A' : 'Death_B', 1.1, true); stats.kos++; score += e.T.score; SFX.ko(); hitMarker(true);
-    killfeed(`${({ wiganer: 'Wiganer', bouncer: 'Bouncer', hen: 'Bridesmaid', bride: 'THE BRIDE' })[e.type]} splatted  +${e.T.score}`);
+    killfeed(`${NAMES[e.type] || e.type} splatted  +${e.T.score}`); if (e.T.creature) burst(e.g.position.clone().setY(1), e.type.includes('goose') ? 'feather' : 'acid', 14, 3);
     if (e.bubble) { e.g.remove(e.bubble); e.bubble = null; }
     const stars = new THREE.Group(); for (let i = 0; i < 4; i++) { const s = new THREE.Mesh(new THREE.OctahedronGeometry(.08), partMats.star); s.position.set(Math.cos(i * 1.57) * .35, 2.3, Math.sin(i * 1.57) * .35); stars.add(s); }
     e.stars = stars; e.g.add(stars);
     if (Math.random() < .45) dropPickup(e.g.position.x, e.g.position.z);
   }
 }
-function enemyThrow(e) { e.throwT = .38; e.c.ctl.once('Throw', 1.5); }
+const NAMES = { wiganer: 'Wiganer', bouncer: 'Bouncer', hen: 'Bridesmaid', bride: 'THE BRIDE', scally: 'Scally', mum: 'Angry mum', ant: 'Giant ant', spitter: 'Spitter ant', soldier: 'Soldier ant',
+  queen: 'THE QUEEN', goose: 'Goose', mothergoose: 'MOTHER GOOSE', keeper: 'Park keeper', drinker: 'Bench drinker' };
+function enemyThrow(e) { e.throwT = e.T.creature ? .2 : .38; e.c.ctl.once('Throw', 1.5); }
 function launchThrow(e) {
-  const from = e.g.position.clone().add(new THREE.Vector3(0, 1.6 * e.scale, 0));
+  const from = e.g.position.clone().add(new THREE.Vector3(0, (e.T.mouthY || 1.6) * e.scale, 0));
   const target = eyePos().add(new THREE.Vector3(rand(-.6, .6), -.4, rand(-.6, .6)));
-  const kind = e.T.proj, speed = kind === 'stiletto' ? 18 : 12;
-  const dist = from.distanceTo(target), t = dist / speed, g = kind === 'stiletto' ? 3 : 9.8;
+  const kind = e.T.proj, PJ = PROJ[kind], speed = PJ.speed;
+  const dist = from.distanceTo(target), t = dist / speed, g = PJ.g;
   const v = new THREE.Vector3((target.x - from.x) / t, (target.y - from.y + .5 * g * t * t) / t, (target.z - from.z) / t);
-  const m = new THREE.Mesh(kind === 'stiletto' ? STIL_GEO : BARM_GEO, kind === 'stiletto' ? STIL_MAT : BARM_MAT); m.position.copy(from); scene.add(m);
+  const m = new THREE.Mesh(PJ.geo, PJ.mat); m.position.copy(from); if (e.T.boss) m.scale.setScalar(1.6); scene.add(m);
   eshots.push({ m, v, g, kind, dmg: e.T.dmg, t: 4 });
 }
 function hurtPlayer(dmg, msg) {
@@ -551,13 +769,61 @@ function dropPickup(x, z) { addPickup(pick(['pies', 'pies', 'peas', 'peas', 'tea
 [['pies', 4, -16], ['peas', -4, -22], ['tea', 7.5, -60], ['pies', -7.5, -64], ['peas', 6, -105], ['barm', -6, -108], ['tea', -7, -150], ['pies', 7, -152], ['peas', -5, -156], ['barm', 5, -189], ['tea', -7.6, -191], ['pies', 7.6, -192]].forEach(([k, x, z]) => addPickup(k, x, z));
 
 // ---------------------------------------------------------------- encounters
-const ENCOUNTERS = [
+const LEVELS = {
+  1: { name: 'WESTFIELD STREET', sub: 'The Siege of Westfield Street',
+    brief: ['Alrite fettler. Bad news. Wigan have invaded. They came over on a coach, they\'ve took Westfield Street and the bouncers have gone over to their side.',
+      'Your mission: get from the kebab shop to the taxi rank alive. Your weapons: whatever we could get from the chippy. Whatever you do, <b>don\'t upset the hen party.</b>'],
+    start: ['GET TO THE TAXI RANK', 'Westfield Street, St Helens · Saturday, 11:47pm'], obj: 'Head down Westfield Street to the taxi rank ↓',
+    bossName: 'THE HEN PARTY', bossSub: 'Mind the stilettos.', end: ['THE HEN PARTY IS OVER', 'Your taxi\'s here. Get in it.'],
+    dead: ['You got battered on Westfield Street.', 'Splatted. Your mam will be ashamed.', 'Knocked out cold outside the chippy.', 'Down and out before last orders.'],
+    cheer: ['GET IN!', 'Easy!', 'Wigan! Wigan!', 'WOOOO!'],
+    wonSub: 'Saturday night on Westfield Street', wonText: 'The hen party is over, Wigan have gone home on their coach, and the taxi driver only wants forty quid to take you to Parr.',
+    ranks: ['LEGEND OF WESTFIELD STREET', 'THATTO HEATH HARDCASE', 'PARR PIE SLINGER', 'LIGHTWEIGHT FROM RAINFORD'],
+    exit: { prompt: 'Get in the taxi →', at: new THREE.Vector3(-2, 0, -216), make: () => taxi(-12, -216, Math.PI / 2), pop: true, move: (m, t) => { m.position.x = Math.min(-2, -14 + t * 6); } },
+    encounters: [
   { trigger: -14, title: 'WAVE 1 – THE WIGAN ADVANCE PARTY', spawn: () => { spawn('wiganer', -4, -44); spawn('wiganer', 4, -48); spawn('wiganer', 0, -52); spawn('wiganer', 6, -40, 3); spawn('wiganer', -6, -50, 5); } },
   { trigger: -62, title: 'WAVE 2 – THE NITECLUB DOOR', spawn: () => { const b = spawn('bouncer', -7.2, -76); b.cd = 1; spawn('wiganer', 4, -88); spawn('wiganer', -2, -94); spawn('wiganer', 6, -92, 4); spawn('bouncer', 3, -96, 6); } },
   { trigger: -107, title: 'WAVE 3 – CHIPPY CHAOS', spawn: () => { [[-5, -128], [5, -132], [0, -138], [-7, -140], [7, -125], [2, -142]].forEach(([x, z], i) => spawn('wiganer', x, z, i > 3 ? 4 : 0)); spawn('bouncer', -3, -136, 2); spawn('bouncer', 4, -140, 7); } },
   { trigger: -152, title: 'WAVE 4 – THE WIGAN COACH HAS ARRIVED', spawn: () => { for (let i = 0; i < 10; i++) spawn('wiganer', rand(-1, 1) + (i % 2 ? -.5 : .5), -168 - (i % 5) * 1.5, Math.floor(i / 3) * 3.2); coachSpawn = true; } },
-  { trigger: -190, title: 'FINAL BOSS – THE HEN PARTY', boss: true, spawn: () => { const b = spawn('bride', 7.4, -205); say(b, 'IT\'S MY HEN DO!!'); spawn('hen', 6, -203); spawn('hen', 8, -208); spawn('hen', 4, -206, 6); spawn('hen', 7, -210, 12); } },
-];
+  { trigger: -190, title: 'FINAL BOSS – THE HEN PARTY', boss: true, spawn: () => { const b = spawn('bride', 7.4, -205); say(b, 'IT\'S MY HEN DO!!'); for (const [x, z, d] of [[6, -203, 0], [8, -208, 0], [4, -206, 6], [7, -210, 12]]) spawn('hen', x, z, d).minion = true; } },
+] },
+  2: { name: 'PARR', sub: 'Parr – Take a Fresh Look',
+    brief: ['The taxi dropped you in Parr. Forty quid, and he wouldn\'t go any further than the Ramford.',
+      'Get across the estate and over the Burgies to catch the milk float out. Word is, Dave Pondlife saw something big up there last Saturday. <b>Something with six legs.</b>'],
+    start: ['GET OVER THE BURGIES', 'Parr, St Helens · Sunday, 1:12am'], obj: 'Head through Parr and over the Burgies ↓',
+    bossName: 'THE QUEEN OF THE BURGIES', bossSub: 'She\'s not happy.', end: ['THE QUEEN IS SPLATTED', 'The milk float\'s here. Get on it.'],
+    dead: ['Done in on the Parr estate.', 'Carried off by giant ants. Nobody will believe you.', 'Splatted on the Burgies.', 'Your mam\'s going to kill you. Again.'],
+    cheer: ['GET IN!', 'PARR MASSIVE!', 'SKREEE!', 'Go \'ome!'],
+    wonSub: 'Sunday morning in Parr', wonText: 'The Queen of the Burgies is splatted, the estate has gone back to bed and the milkman will drop you at Taylor Park if you help with the gold tops.',
+    ranks: ['KING OF THE BURGIES', 'PARR ESTATE LEGEND', 'ANT-AGONIST', 'BITTEN IN BLACKBROOK'],
+    exit: { prompt: 'Get on the milk float →', at: new THREE.Vector3(2, 0, -216), make: () => milkFloat(16, -216), move: (m, t) => { m.position.x = Math.max(2.4, 16 - t * 5); } },
+    encounters: [
+      { trigger: -14, title: 'WAVE 1 – WELCOME TO PARR', spawn: () => { spawn('scally', -4, -42); spawn('scally', 4, -46); spawn('scally', 0, -52); spawn('scally', 6, -40, 3); spawn('scally', -6, -50, 5); } },
+      { trigger: -62, title: 'WAVE 2 – THE DRESSING GOWN BRIGADE', spawn: () => { const m = spawn('mum', -7, -76); m.cd = 1; say(m, 'GET IN THIS HOUSE!'); spawn('mum', 6, -84); spawn('scally', -2, -92); spawn('scally', 4, -94, 3); spawn('mum', 0, -96, 6); } },
+      { trigger: -107, title: 'WAVE 3 – SOMETHING ON THE BURGIES', sub: 'Giant ants. Dave was right.', spawn: () => { [[-5, -128], [5, -132], [0, -138], [-7, -140], [7, -125]].forEach(([x, z], i) => spawn('ant', x, z, i > 2 ? 2.5 : 0)); spawn('spitter', 2, -142, 1); spawn('spitter', -3, -144, 5); } },
+      { trigger: -152, title: 'WAVE 4 – THE NEST', spawn: () => { for (let i = 0; i < 7; i++) spawn('ant', rand(-6, 6), -170 - rand(0, 8), Math.floor(i / 3) * 2.6); spawn('soldier', -3, -176, 1); spawn('soldier', 4, -180, 6); spawn('spitter', 6, -178, 3); } },
+      { trigger: -190, title: 'FINAL BOSS – THE QUEEN OF THE BURGIES', boss: true, spawn: () => { const q = spawn('queen', 0, -214); say(q, 'SKREEEEEEEEE!!!'); for (let i = 0; i < 3; i++) { const a = spawn('ant', rand(-6, 6), -206 - i * 2, i * 2); a.minion = true; } } },
+    ] },
+  3: { name: 'TAYLOR PARK', sub: 'The Battle of Taylor Park',
+    brief: ['The milkman dropped you at the gates of Taylor Park. All you\'ve got to do is cut through to the night bus on the far side.',
+      'The keepers are still on shift, the bench drinkers want your pies, and the Canada geese have taken over the boating lake. <b>Do not make eye contact with the big one.</b>'],
+    start: ['CROSS TAYLOR PARK', 'Taylor Park, St Helens · Sunday, 4:40am'], obj: 'Cut through the park to the night bus ↓',
+    bossName: 'MOTHER GOOSE', bossSub: 'HONK.', end: ['MOTHER GOOSE IS COOKED', 'The night bus is here. Get on it.'],
+    dead: ['Goosed in Taylor Park.', 'Pecked to bits by the boating lake.', 'Banned from the park. For life.', 'Mother Goose wins again.'],
+    cheer: ['HONK!', 'Keep off the grass!', 'HONK HONK!', 'Cheers, mate!'],
+    wonSub: 'Dawn over Taylor Park', wonText: 'The geese are beaten, the keepers have gone for a brew, and the night bus is going to Billinge. Where Crank Caverns is. Uh oh.',
+    ranks: ['LORD OF TAYLOR PARK', 'GOOSE BOTHERER', 'BANDSTAND BRAWLER', 'PECKED IN PRESCOT'],
+    exit: { prompt: 'Get on the night bus →', at: new THREE.Vector3(-3, 0, -217.5), make: () => nightBus(-18, -221), move: (m, t) => { m.position.x = Math.min(-3, -18 + t * 7); } },
+    encounters: [
+      { trigger: -14, title: 'WAVE 1 – KEEP OFF THE GRASS', spawn: () => { const k = spawn('keeper', -3, -40); say(k, 'Oi! Park\'s shut!'); spawn('goose', 4, -46); spawn('goose', -5, -50); spawn('goose', 6, -52, 3); spawn('keeper', 3, -54, 5); } },
+      { trigger: -62, title: 'WAVE 2 – THE BENCH DRINKERS', spawn: () => { [[-7, -78], [6, -84], [-2, -92], [7, -94]].forEach(([x, z], i) => spawn('drinker', x, z, i > 1 ? 3 : 0)); spawn('keeper', 0, -96, 5); } },
+      { trigger: -107, title: 'WAVE 3 – THE BOATING LAKE', sub: 'Something is coming out of the water.', spawn: () => { [[6, -120], [8, -126], [5, -132], [7.5, -138], [4.5, -124], [6.5, -142]].forEach(([x, z], i) => spawn('goose', x, z, i > 2 ? 3 : 0)); spawn('drinker', -6, -138, 2); } },
+      { trigger: -152, title: 'WAVE 4 – THE BANDSTAND', spawn: () => { spawn('keeper', 2, -168); spawn('keeper', -8, -176, 2); spawn('drinker', 5, -174); spawn('drinker', -2, -180, 4); for (let i = 0; i < 4; i++) spawn('goose', rand(-6, 6), -178 - rand(0, 6), 2 + i * 1.5); } },
+      { trigger: -190, title: 'FINAL BOSS – MOTHER GOOSE', boss: true, spawn: () => { const g = spawn('mothergoose', 2, -214); say(g, 'HOOOOOOOONK!!!'); for (let i = 0; i < 3; i++) { const m = spawn('goose', rand(-6, 6), -207 - i * 2, i * 2); m.minion = true; } } },
+    ] },
+};
+const LV = LEVELS[LEVEL_N];
+const ENCOUNTERS = LV.encounters;
 let coachSpawn = false;
 
 // ---------------------------------------------------------------- HUD
@@ -604,16 +870,16 @@ function respawn() {
 
 function start() {
   audio(); if (AC && AC.state === 'suspended') AC.resume();
-  if (state.mode === 'title' || state.mode === 'won') { resetRun(); banner('GET TO THE TAXI RANK', 'Westfield Street, St Helens · Saturday, 11:47pm'); }
+  if (state.mode === 'title' || state.mode === 'won') { resetRun(); banner(LV.start[0], LV.start[1]); }
   if (state.mode === 'dead') { respawn(); banner('BACK ON YER FEET', 'Last checkpoint · −250 points'); }
   state.mode = 'play'; overlay(null);
   canvas.requestPointerLock && canvas.requestPointerLock();
 }
 function pause() { if (state.mode !== 'play') return; state.mode = 'paused'; mouseDown = false; overlay('pause'); }
 function die() {
-  for (const e of enemies) if (!e.dead && e.delay <= 0) { e.throwT = 0; e.c.ctl.loop('Cheer'); say(e, pick(['GET IN!', 'Easy!', 'Wigan! Wigan!', 'WOOOO!'])); }
+  for (const e of enemies) if (!e.dead && e.delay <= 0) { e.throwT = 0; e.c.ctl.loop('Cheer'); say(e, pick(LV.cheer)); }
   player.alive = false; state.mode = 'dead'; mouseDown = false; document.exitPointerLock && document.exitPointerLock();
-  $('ph-dead-msg').textContent = pick(['You got battered on Westfield Street.', 'Splatted. Your mam will be ashamed.', 'Knocked out cold outside the chippy.', 'Down and out before last orders.']);
+  $('ph-dead-msg').textContent = pick(LV.dead);
   overlay('dead');
 }
 let taxiArrive = null;
@@ -623,8 +889,9 @@ function win() {
   const acc = stats.shots ? Math.round(stats.hits / stats.shots * 100) : 0;
   const timeBonus = Math.max(0, Math.round(1500 - stats.time * 4)), hpBonus = Math.round(player.hp * 10);
   score += timeBonus + hpBonus;
-  const best = STORE.get('ph-best', 0); const newBest = score > best; if (newBest) STORE.set('ph-best', score);
-  const rank = score > 9000 ? 'LEGEND OF WESTFIELD STREET' : score > 6500 ? 'THATTO HEATH HARDCASE' : score > 4000 ? 'PARR PIE SLINGER' : 'LIGHTWEIGHT FROM RAINFORD';
+  const best = STORE.get(BEST_KEY, 0); const newBest = score > best; if (newBest) STORE.set(BEST_KEY, score);
+  if (STORE.get('ph-unlocked', 1) < LEVEL_N + 1) STORE.set('ph-unlocked', Math.min(3, LEVEL_N + 1));
+  const R = LV.ranks, rank = score > 9000 ? R[0] : score > 6500 ? R[1] : score > 4000 ? R[2] : R[3];
   $('ph-win-stats').innerHTML = `<div><span>Time</span><b>${Math.floor(stats.time / 60)}:${String(Math.floor(stats.time % 60)).padStart(2, '0')}</b></div>
     <div><span>Splatted</span><b>${stats.kos}</b></div><div><span>Accuracy</span><b>${acc}%</b></div><div><span>Time bonus</span><b>+${timeBonus}</b></div>
     <div><span>Health bonus</span><b>+${hpBonus}</b></div><div><span>Final score</span><b>${score}${newBest ? ' ★ NEW BEST' : ''}</b></div>`;
@@ -648,7 +915,21 @@ $('ph-restart').addEventListener('click', () => { state.mode = 'title'; start();
 $('ph-sens').value = sens; $('ph-sens').addEventListener('input', (e) => { sens = +e.target.value; STORE.set('ph-sens', sens); });
 $('ph-vol').value = STORE.get('ph-vol', .7); $('ph-vol').addEventListener('input', (e) => { STORE.set('ph-vol', +e.target.value); if (master) master.gain.value = +e.target.value; });
 canvas.addEventListener('click', () => { if (state.mode === 'play' && !locked) canvas.requestPointerLock(); });
-$('ph-best').textContent = STORE.get('ph-best', 0) ? 'Your best: ' + STORE.get('ph-best', 0) : '';
+const BEST_KEY = LEVEL_N === 1 ? 'ph-best' : 'ph-best-' + LEVEL_N;
+$('ph-best').textContent = STORE.get(BEST_KEY, 0) ? 'Your best on this level: ' + STORE.get(BEST_KEY, 0) : '';
+// level-specific words on the overlays
+document.querySelector('#ph-title h1 small').textContent = LV.sub;
+document.querySelector('#ph-title .brief div:last-child').innerHTML = LV.brief.map((p) => `<p>${p}</p>`).join('');
+document.querySelector('#ph-won h1 small').textContent = LV.wonSub;
+$('ph-won-text').textContent = LV.wonText;
+$('ph-restart').textContent = 'Start this level again';
+if (LEVEL_N > 1) document.title = `PIE HARD – Level ${LEVEL_N}: ${LV.name} | St Helens Celebrity News`;
+const unlocked = Math.max(STORE.get('ph-unlocked', 1), LEVEL_N);
+$('ph-levels').innerHTML = [1, 2, 3].map((n) => n <= unlocked
+  ? `<a class="lvl${n === LEVEL_N ? ' on' : ''}" href="${n === 1 ? './' : '?level=' + n}"><b>${n}</b>${LEVELS[n].name}</a>`
+  : `<span class="lvl locked"><b>${n}</b>LOCKED</span>`).join('');
+if (LEVEL_N < 3) { $('ph-next').hidden = false; $('ph-next').textContent = `Next level: ${LEVELS[LEVEL_N + 1].name} →`; $('ph-next').addEventListener('click', () => { location.href = '?level=' + (LEVEL_N + 1); }); }
+else $('ph-soon').textContent = 'Still to come: the East Lancs and Crank Caverns.';
 
 // ---------------------------------------------------------------- update
 function collide(pos, r) {
@@ -688,14 +969,15 @@ function updateEnemies(dt, t) {
   for (const e of enemies) {
     const g = e.g, C = e.c;
     C.material.userData.flash.value = e.hitT > 0 ? e.hitT / .15 * .55 : 0;
-    if (e.delay > 0) { e.delay -= dt; if (e.delay <= 0) { g.visible = true; if (coachSpawn && e.type === 'wiganer') g.position.set(rand(.8, 1.2), 0, -166 + rand(-2, 2)); burst(g.position.clone().setY(1), 'barm', 6, 2); } continue; }
+    if (e.delay > 0) { e.delay -= dt; if (e.delay <= 0) { g.visible = true; if (coachSpawn && e.type === 'wiganer') g.position.set(rand(.8, 1.2), 0, -166 + rand(-2, 2)); burst(g.position.clone().setY(1), e.T.creature ? (e.type.includes('goose') ? 'feather' : 'acid') : 'barm', 6, 2); } continue; }
     if (e.dead) {
+      if (e.hitT > 0) e.hitT -= dt;
       e.deadT += dt; if (e.deadT < 4) C.ctl.update(dt);
       if (e.stars) e.stars.rotation.y += dt * 4;
       if (e.deadT > 5) { g.visible = false; }
       continue;
     }
-    if (e.T.boss || e.type === 'hen') { bossAlive++; bossHp += Math.max(0, e.hp); bossMax += e.max; }
+    if (e.T.boss || e.minion) { bossAlive++; bossHp += Math.max(0, e.hp); bossMax += e.max; }
     const to = new THREE.Vector3(pp.x - g.position.x, 0, pp.z - g.position.z), dist = to.length(); to.normalize();
     g.rotation.y = Math.atan2(to.x, to.z);
     const [near, far] = e.T.range;
@@ -713,6 +995,7 @@ function updateEnemies(dt, t) {
     for (const c of colliders) { const cx = clamp(tmp.x, c.minX, c.maxX), cz = clamp(tmp.z, c.minZ, c.maxZ), dx = tmp.x - cx, dz = tmp.z - cz, d2 = dx * dx + dz * dz; if (d2 < .16 && d2 > 1e-6) { const d = Math.sqrt(d2); tmp.x = cx + dx / d * .4; tmp.z = cz + dz / d * .4; } }
     g.position.x = tmp.x; g.position.z = tmp.z;
     // animate
+    if (e.T.spawner) { e.spawnT -= dt; if (e.spawnT <= 0) { e.spawnT = rand(4.5, 7); if (enemies.filter((o) => !o.dead).length < 9) { const m = spawn(e.T.spawner, clamp(g.position.x + rand(-3, 3), -8, 8), g.position.z + rand(-1, 2)); m.minion = true; m.cd = rand(1, 2); burst(m.g.position.clone().setY(1), e.type === 'queen' ? 'acid' : 'feather', 10, 3); } } }
     if (mv.lengthSq() > .01) { if (spd > 3.6) C.ctl.loop('Running_A', spd / 5.2); else C.ctl.loop('Walking_A', spd / 2.6); }
     else C.ctl.loop('Unarmed_Idle');
     if (e.hitT > 0) e.hitT -= dt;
@@ -722,14 +1005,14 @@ function updateEnemies(dt, t) {
     e.cd -= dt;
     if (e.cd <= 0 && dist < (e.T.melee ? far + .6 : 26)) {
       e.cd = rand(e.T.cd[0], e.T.cd[1]);
-      if (e.T.melee) { if (dist < far + .6) { C.ctl.once(Math.random() < .7 ? 'Unarmed_Melee_Attack_Punch_A' : 'Unarmed_Melee_Attack_Kick', 1.4); hurtPlayer(e.T.dmg, pick(['Bouncer gave you a slap!', 'Thrown out!', 'Headlocked!'])); } }
-      else if (e.type === 'hen' || e.type === 'bride') { if (dist < 2.2) { C.ctl.once('Unarmed_Melee_Attack_Punch_A', 1.5); hurtPlayer(e.T.dmg, 'Handbagged!'); } else enemyThrow(e); }
+      if (e.T.melee) { if (dist < far + .6) { C.ctl.once(Math.random() < .7 ? 'Unarmed_Melee_Attack_Punch_A' : 'Unarmed_Melee_Attack_Kick', 1.4); if (e.T.sfx) SFX[e.T.sfx](e.T.boss); hurtPlayer(e.T.dmg, pick(e.T.meleeLines || ['Bouncer gave you a slap!', 'Thrown out!', 'Headlocked!'])); } }
+      else if (e.T.mixed || e.type === 'hen' || e.type === 'bride') { if (dist < 2.2) { C.ctl.once('Unarmed_Melee_Attack_Punch_A', 1.5); hurtPlayer(e.T.dmg, pick(e.T.meleeLines || ['Handbagged!'])); } else enemyThrow(e); }
       else enemyThrow(e);
     }
     if (e.sayT > 0) { e.sayT -= dt; if (e.sayT <= 0 && e.bubble) { g.remove(e.bubble); e.bubble = null; } }
     else if (Math.random() < dt * (e.T.boss ? .35 : .12) && dist < 22) say(e, pick(e.T.quips));
   }
-  if (bossMax > 0 && state.enc === 4) { H.boss.style.display = bossAlive ? 'block' : 'none'; H.bossBar.style.width = (bossHp / bossMax * 100) + '%'; }
+  if (bossMax > 0 && state.enc === ENCOUNTERS.length - 1) { H.boss.style.display = bossAlive ? 'block' : 'none'; H.bossBar.style.width = (bossHp / bossMax * 100) + '%'; }
 }
 function updateShots(dt) {
   for (let i = shots.length - 1; i >= 0; i--) {
@@ -751,8 +1034,8 @@ function updateShots(dt) {
     const s = eshots[i]; s.t -= dt; s.v.y -= s.g * dt; s.m.position.addScaledVector(s.v, dt); s.m.rotation.x += dt * 10;
     const p = s.m.position, dx = p.x - eye.x, dz = p.z - eye.z;
     let gone = s.t <= 0 || p.y <= .05;
-    if (!gone && dx * dx + dz * dz < .42 && p.y > player.pos.y + .2 && p.y < eye.y + .3) { hurtPlayer(s.dmg, s.kind === 'stiletto' ? pick(['Stilettoed!', 'Heel to the head!']) : pick(['Barm to the face!', 'Bapped!'])); gone = true; }
-    if (gone) { burst(p, s.kind === 'stiletto' ? 'gravy' : 'barm', 6, 2); scene.remove(s.m); eshots.splice(i, 1); }
+    if (!gone && dx * dx + dz * dz < .42 && p.y > player.pos.y + .2 && p.y < eye.y + .3) { hurtPlayer(s.dmg, pick(PROJ[s.kind].hit)); gone = true; }
+    if (gone) { burst(p, PROJ[s.kind].burst, 6, 2); scene.remove(s.m); eshots.splice(i, 1); }
   }
   for (let i = fx.length - 1; i >= 0; i--) { const f = fx[i]; f.t -= dt; f.v.y -= 12 * dt; f.m.position.addScaledVector(f.v, dt); if (f.m.position.y < .03) { f.m.position.y = .03; f.v.multiplyScalar(.4); } if (f.t <= 0) { scene.remove(f.m); fx.splice(i, 1); } }
 }
@@ -760,25 +1043,25 @@ function updateEncounters() {
   const z = player.pos.z;
   const next = state.enc + 1;
   if (next < ENCOUNTERS.length && z < ENCOUNTERS[next].trigger && state.cleared === state.enc) {
-    state.enc = next; ENCOUNTERS[next].spawn(); banner(ENCOUNTERS[next].title, next === 4 ? 'Mind the stilettos.' : null);
-    if (ENCOUNTERS[next].boss) { H.boss.style.display = 'block'; H.bossName.textContent = 'THE HEN PARTY'; }
+    const E = ENCOUNTERS[next]; state.enc = next; E.spawn(); banner(E.title, E.boss ? LV.bossSub : E.sub || null);
+    if (E.boss) { H.boss.style.display = 'block'; H.bossName.textContent = LV.bossName; }
   }
   if (state.enc > state.cleared) {
     const live = enemies.filter((e) => !e.dead).length;
     if (live === 0) {
       state.cleared = state.enc;
       if (state.cleared < BARRIERS.length) { barrierObjs[state.cleared].userData.drop = true; banner('AREA CLEAR', 'The barriers are coming down. Keep moving.'); score += 250; }
-      else { H.boss.style.display = 'none'; banner('THE HEN PARTY IS OVER', 'Your taxi\'s here. Get in it.'); taxiArrive = { t: 0 }; score += 1000; }
+      else { H.boss.style.display = 'none'; banner(LV.end[0], LV.end[1]); setObj('Wait for it…'); taxiArrive = { t: 0 }; score += 1000; }
       hud();
     }
   }
   barrierObjs.forEach((b) => { if (b.userData.drop && b.visible) { b.position.y -= .03; if (b.position.y < -1.4) b.visible = false; } });
   if (taxiArrive) {
     taxiArrive.t += lastDt;
-    if (!taxiArrive.mesh) { taxiArrive.mesh = taxi(-12, -216, Math.PI / 2); colliders.pop(); }
-    taxiArrive.mesh.position.x = Math.min(-2, -14 + taxiArrive.t * 6);
-    if (taxiArrive.t > 2 && player.pos.distanceTo(new THREE.Vector3(-2, 0, -216)) < 3.2) win();
-    if (taxiArrive.t > 2) setObj('Get in the taxi →');
+    if (!taxiArrive.mesh) { taxiArrive.mesh = LV.exit.make(); if (LV.exit.pop) colliders.pop(); }
+    LV.exit.move(taxiArrive.mesh, taxiArrive.t);
+    if (taxiArrive.t > 2 && player.pos.distanceTo(LV.exit.at) < 3.4) win();
+    if (taxiArrive.t > 2) setObj(LV.exit.prompt);
   }
 }
 
@@ -817,7 +1100,7 @@ function frame() {
   for (const p of pickups) { p.t += dt; p.g.rotation.y += dt * 1.6; p.g.position.y = .6 + Math.sin(p.t * 2) * .08;
     if (state.mode === 'play' && p.g.visible && p.g.position.distanceTo(new THREE.Vector3(player.pos.x, .6, player.pos.z)) < 1.2) { PICK[p.kind].apply(); p.g.visible = false; SFX.pickup(); toast(PICK[p.kind].label); hud(); } }
   // club music volume by distance to NITECLUB
-  if (clubGain) clubGain.gain.value = state.mode === 'play' || state.mode === 'title' ? clamp(1 - Math.abs(player.pos.z + 76) / 40, 0, 1) * .5 : 0;
+  if (clubGain) clubGain.gain.value = LEVEL_N === 1 && (state.mode === 'play' || state.mode === 'title') ? clamp(1 - Math.abs(player.pos.z + 76) / 40, 0, 1) * .5 : 0;
   // HUD timers
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) H.toast.style.opacity = 0; }
   if (hitT > 0) { hitT -= dt; if (hitT <= 0) H.hit.style.opacity = 0; }
@@ -827,7 +1110,7 @@ function frame() {
   if (vig !== lastVig) { H.vig.style.opacity = vig; lastVig = vig; }
   if (state.mode === 'play' && !taxiArrive) {
     const live = enemies.filter((e) => !e.dead && e.delay <= 0).length;
-    setObj(state.enc > state.cleared ? `Splat them all · ${live} left` : 'Head down Westfield Street to the taxi rank ↓');
+    setObj(state.enc > state.cleared ? `Splat them all · ${live} left` : LV.obj);
   }
   renderer.render(scene, camera);
   const now = performance.now(), real = now - lastReal; lastReal = now;
@@ -839,4 +1122,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 hud(); overlay('title'); frame();
-window.__ph = { state, player, enemies, start, ENCOUNTERS, fire, throwGrenade, setWeapon, stats, damageEnemy, get score() { return score; }, get taxi() { return taxiArrive; }, renderer, scene, fx, decals };
+window.__ph = { state, player, enemies, start, ENCOUNTERS, fire, throwGrenade, setWeapon, stats, damageEnemy, get score() { return score; }, get taxi() { return taxiArrive; }, exitAt: LV.exit.at, renderer, scene, fx, decals };

@@ -35,7 +35,8 @@ h1 small{display:block;font:13px/1.6 "Press Start 2P",monospace;color:#fff;text-
 .box li{padding:2px 0}
 kbd{display:inline-block;min-width:26px;padding:1px 6px;margin-right:4px;background:#22183a;border:1px solid #6a54a8;border-bottom-width:3px;border-radius:4px;font:11px/1.6 "Press Start 2P",monospace;text-align:center;color:#fff}
 .btn{display:block;width:100%;padding:16px;font:16px "Press Start 2P",monospace;color:var(--plum);background:var(--orange);border:4px outset #ffd9a8;cursor:pointer;text-transform:uppercase}
-.btn:disabled{opacity:.65;cursor:wait;font-size:12px}.btn:hover{background:#ffb866}.btn:active{border-style:inset}
+.levels{display:flex;gap:8px;margin:14px 0 0}.lvl{flex:1;display:block;text-align:center;padding:8px 4px;border:2px solid #6a54a8;background:#2a1f44;color:#fff;text-decoration:none;font:9px/1.5 "Press Start 2P",monospace}.lvl b{display:block;font-size:16px;color:var(--orange)}.lvl.on{border-color:var(--orange)}.lvl.locked{opacity:.4}a.lvl:hover{background:#3a2c5e}
+.btn[hidden]{display:none}.btn:disabled{opacity:.65;cursor:wait;font-size:12px}.btn:hover{background:#ffb866}.btn:active{border-style:inset}
 .btn.alt{background:#2a1f44;color:#fff;border-color:#6a54a8;margin-top:10px;font-size:12px;padding:12px}
 .small{font-size:12px;color:#bbb;text-align:center;margin:12px 0 0}
 .mobile-only{display:none}
@@ -108,6 +109,7 @@ kbd{display:inline-block;min-width:26px;padding:1px 6px;margin-right:4px;backgro
       </div>
       <button class="btn" id="ph-start" type="button">Click to play</button>
       <p class="small" id="ph-best"></p>
+      <div class="levels" id="ph-levels"></div>
     </div>
     <div class="mobile-only">
       <p style="text-align:center"><b>PIE HARD needs a keyboard and mouse.</b><br>Come back on a computer, or have a go at the <a href="../arcade.html">other SHCN arcade games</a> – they work on your phone.</p>
@@ -140,11 +142,12 @@ kbd{display:inline-block;min-width:26px;padding:1px 6px;margin-right:4px;backgro
 <div class="ov" id="ph-won" hidden>
   <div class="card">
     <h1 style="color:#39ff14">YOU SURVIVED<small>Saturday night on Westfield Street</small></h1>
-    <p style="text-align:center">The hen party is over, Wigan have gone home on their coach, and the taxi driver only wants forty quid to take you to Parr.</p>
+    <p style="text-align:center" id="ph-won-text"></p>
     <div id="ph-rank"></div>
     <div class="stats" id="ph-win-stats"></div>
-    <button class="btn" id="ph-again" type="button">Play again</button>
-    <p class="small">More levels coming soon: Parr, Taylor Park, the East Lancs and Crank Caverns. <a href="../arcade.html">Back to the Arcade</a></p>
+    <button class="btn" id="ph-next" type="button" hidden>Next level</button>
+    <button class="btn alt" id="ph-again" type="button">Play this level again</button>
+    <p class="small"><span id="ph-soon"></span> <a href="../arcade.html">Back to the Arcade</a></p>
   </div>
 </div>
 
