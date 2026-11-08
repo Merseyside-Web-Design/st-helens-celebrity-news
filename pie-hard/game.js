@@ -907,7 +907,8 @@ const TYPES = {
 };
 function spawn(type, x, z, delay = 0) {
   const T = TYPES[type], c = T.creature ? T.creature() : makeCharacter(type), g = c.root; g.position.set(x, 0, z); scene.add(g);
-  const e = { type, T, g, c, hp: T.hp, max: T.hp, scale: c.scale, throwT: 0, cd: rand(.6, 1.6) + delay, dead: false, deadT: 0, walk: rand(0, 6), strafe: Math.random() < .5 ? 1 : -1,
+  const hp0 = Math.round(T.hp * EASY.hp);
+  const e = { type, T, g, c, hp: hp0, max: hp0, scale: c.scale, throwT: 0, cd: rand(.6, 1.6) + delay, dead: false, deadT: 0, walk: rand(0, 6), strafe: Math.random() < .5 ? 1 : -1,
     strafeT: rand(1, 3), sayT: 0, bubble: null, attackT: 0, hitT: 0, spawnT: 4, delay };
   g.visible = delay <= 0;
   enemies.push(e); return e;
@@ -938,15 +939,18 @@ const NAMES = { wiganer: 'Wiganer', bouncer: 'Bouncer', hen: 'Bridesmaid', bride
 function enemyThrow(e) { e.throwT = e.T.creature ? .2 : .38; e.c.ctl.once('Throw', 1.5); }
 function launchThrow(e) {
   const from = e.g.position.clone().add(new THREE.Vector3(0, (e.T.mouthY || 1.6) * e.scale, 0));
-  const target = eyePos().add(new THREE.Vector3(rand(-.6, .6), -.4, rand(-.6, .6)));
+  const target = eyePos().add(new THREE.Vector3(rand(-EASY.spread, EASY.spread), -.4, rand(-EASY.spread, EASY.spread)));
   const kind = e.T.proj, PJ = PROJ[kind], speed = PJ.speed;
   const dist = from.distanceTo(target), t = dist / speed, g = PJ.g;
   const v = new THREE.Vector3((target.x - from.x) / t, (target.y - from.y + .5 * g * t * t) / t, (target.z - from.z) / t);
   const m = new THREE.Mesh(PJ.geo, PJ.mat); m.position.copy(from); if (e.T.boss) m.scale.setScalar(1.6); scene.add(m);
   eshots.push({ m, v, g, kind, dmg: e.T.dmg, t: 4 });
 }
+// difficulty: enemies hit softer, fire less often, aim worse and go down quicker; your aim still has to be good
+const EASY = { dmg: .6, hp: .8, cd: 1.35, spread: 1.1 };
 function hurtPlayer(dmg, msg) {
   if (!player.alive || state.mode !== 'play') return;
+  dmg = Math.round(dmg * EASY.dmg); player.calmT = 0;
   player.hp -= dmg; player.hurtT = .4; SFX.hurt(); shake = Math.max(shake, .18); stats.taken += dmg;
   if (msg && Math.random() < .5) toast(msg);
   if (player.hp <= 0) { player.hp = 0; die(); }
@@ -1198,6 +1202,8 @@ function updatePlayer(dt) {
   const moving = Math.hypot(player.vel.x, player.vel.z);
   player.bob += dt * moving * 1.6;
   if (mouseDown) fire();
+  // catch your breath: slowly heal back up to 50 after 4 seconds without being hit
+  player.calmT = (player.calmT || 0) + dt; if (player.alive && player.calmT > 4 && player.hp < 50) { player.hp = Math.min(50, player.hp + 4 * dt); hud(); }
   player.cool -= dt; player.clickCool = (player.clickCool || 0) - dt; swapT -= dt;
 }
 function updateEnemies(dt, t) {
@@ -1241,7 +1247,7 @@ function updateEnemies(dt, t) {
     // attack
     e.cd -= dt;
     if (e.cd <= 0 && dist < (e.T.melee ? far + .6 : 26)) {
-      e.cd = rand(e.T.cd[0], e.T.cd[1]);
+      e.cd = rand(e.T.cd[0], e.T.cd[1]) * EASY.cd;
       if (e.T.melee) { if (dist < far + .6) { C.ctl.once(Math.random() < .7 ? 'Unarmed_Melee_Attack_Punch_A' : 'Unarmed_Melee_Attack_Kick', 1.4); if (e.T.sfx) SFX[e.T.sfx](e.T.boss); hurtPlayer(e.T.dmg, pick(e.T.meleeLines || ['Bouncer gave you a slap!', 'Thrown out!', 'Headlocked!'])); } }
       else if (e.T.mixed || e.type === 'hen' || e.type === 'bride') { if (dist < 2.2) { C.ctl.once('Unarmed_Melee_Attack_Punch_A', 1.5); hurtPlayer(e.T.dmg, pick(e.T.meleeLines || ['Handbagged!'])); } else enemyThrow(e); }
       else enemyThrow(e);
