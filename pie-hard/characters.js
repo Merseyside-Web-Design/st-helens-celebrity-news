@@ -136,9 +136,15 @@ export function makeCharacter(type) {
     strap.position.y = .15; bag.add(body, strap); bag.position.set(0, -.12, .05); handR.add(bag);
   }
   if (look.veil && head) {
-    const veilGeo = new THREE.CylinderGeometry(.55, .75, 1.4, 16, 1, true, Math.PI * .6, Math.PI * .8);
-    const veil = new THREE.Mesh(veilGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x555555, transparent: true, opacity: .5, side: THREE.DoubleSide, depthWrite: false }));
-    veil.position.set(0, .3, -.12); head.add(veil);
+    // a soft veil: pinned at the crown, falling down her back, fading out at the edges (no hard outline)
+    const fade = document.createElement('canvas'); fade.width = 64; fade.height = 128; const fg = fade.getContext('2d');
+    // alphaMap reads brightness, so paint grey levels: bright in the middle, black at the sides and hem
+    for (let x = 0; x < 64; x++) { const side = Math.pow(Math.sin(x / 63 * Math.PI), 1.5); for (let y = 0; y < 128; y++) {
+      const v = Math.round(255 * side * Math.min(1, (1 - y / 128) * 1.6)); fg.fillStyle = `rgb(${v},${v},${v})`; fg.fillRect(x, y, 1, 1); } }
+    const veilGeo = new THREE.CylinderGeometry(.46, .62, 1.4, 18, 1, true, Math.PI * .72, Math.PI * .56);
+    veilGeo.translate(0, -.7, 0);
+    const veil = new THREE.Mesh(veilGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x666666, transparent: true, alphaMap: new THREE.CanvasTexture(fade), opacity: .7, side: THREE.DoubleSide, depthWrite: false }));
+    veil.position.set(0, .8, -.1); veil.rotation.x = .1; head.add(veil);
     const tiara = new THREE.Mesh(new THREE.TorusGeometry(.26, .035, 6, 18, Math.PI), new THREE.MeshBasicMaterial({ color: 0xfff2a8 }));
     tiara.position.set(0, .62, .18); tiara.rotation.x = -.35; head.add(tiara);
   }
