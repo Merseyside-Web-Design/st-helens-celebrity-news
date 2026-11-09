@@ -1116,10 +1116,10 @@ const TYPES = {
   bouncer: { hp: 140, speed: 2.4, scale: 1.18, range: [0, 1.6], dmg: 16, cd: [1.1, 1.6], score: 300, melee: true,
     quips: ['Beak, mate?', 'Give us your gear.', 'Beak, mate? Beak?', 'Give us your gear, lad.', 'Not tonight, lad.', 'Name\'s not down.', 'Not in them trainers.', 'Have you been drinking?', 'ID. Now.'],
     hit: ['Right. That\'s it.', 'You\'re barred.', 'Oi!'], },
-  hen: { hp: 140, speed: 4.4, scale: .95, range: [3, 10], dmg: 10, cd: [.7, 1.3], score: 600, proj: 'stiletto',
+  hen: { hp: 85, speed: 3.6, scale: .95, range: [3, 10], dmg: 7, cd: [1.1, 1.9], score: 600, proj: 'stiletto',
     quips: ['FUCKING DICKHEAD!', 'SMALL PENIS!', 'WANKER!', 'Oi, small penis!', 'GET HIM GIRLS!', 'WOOOO!', 'Mind me nails!', 'SHOTS!', 'Who invited HIM?!'],
     hit: ['Me extensions!', 'That\'s me best handbag!', 'Ow, me heels!'], },
-  bride: { hp: 420, speed: 4.0, scale: 1.05, range: [2, 9], dmg: 12, cd: [.55, 1.0], score: 2000, proj: 'stiletto', boss: true,
+  bride: { hp: 280, speed: 3.4, scale: 1.05, range: [2, 9], dmg: 9, cd: [.9, 1.5], score: 2000, proj: 'stiletto', boss: true,
     quips: ['FUCKING DICKHEAD!!', 'WANKER!!', 'SMALL PENIS!!', 'IT\'S MY HEN DO!!', 'NOBODY RUINS MY HEN DO!', 'I\'M THE BRIDE!!', 'SHOTS! SHOTS! SHOTS!', 'Get him, girls!'],
     hit: ['ME VEIL!', 'Do you know how much this cost?!', 'RIGHT!'], },
   // level 2: Parr
@@ -1258,7 +1258,8 @@ const LEVELS = {
   { trigger: -62, title: 'WAVE 2 – THE NITECLUB DOOR', spawn: () => { const b = spawn('bouncer', -7.2, -76); b.cd = 1; spawn('wiganer', 4, -88); spawn('wiganer', -2, -94); spawn('wiganer', 6, -92, 4); spawn('bouncer', 3, -96, 6); } },
   { trigger: -107, title: 'WAVE 3 – CHIPPY CHAOS', spawn: () => { [[-5, -128], [5, -132], [0, -138], [-7, -140], [7, -125], [2, -142]].forEach(([x, z], i) => spawn('wiganer', x, z, i > 3 ? 4 : 0)); spawn('bouncer', -3, -136, 2); spawn('bouncer', 4, -140, 7); } },
   { trigger: -152, title: 'WAVE 4 – THE WIGAN COACH HAS ARRIVED', spawn: () => { for (let i = 0; i < 10; i++) spawn('wiganer', rand(-1, 1) + (i % 2 ? -.5 : .5), -168 - (i % 5) * 1.5, Math.floor(i / 3) * 3.2); coachSpawn = true; } },
-  { trigger: -190, title: 'FINAL BOSS – THE HEN PARTY', boss: true, spawn: () => { const b = spawn('bride', 7.4, -205); say(b, 'IT\'S MY HEN DO!!'); for (const [x, z, d] of [[6, -203, 0], [8, -208, 0], [4, -206, 6], [7, -210, 12]]) spawn('hen', x, z, d).minion = true; } },
+  { trigger: -190, title: 'FINAL BOSS – THE HEN PARTY', boss: true, spawn: () => { const b = spawn('bride', 7.4, -205); say(b, 'IT\'S MY HEN DO!!'); for (const [x, z, d] of [[6, -203, 0], [4, -206, 6], [7, -210, 14]]) spawn('hen', x, z, d).minion = true;
+    if (LEVEL_N === 1) { addPickup('tea', -5, -192); addPickup('pies', -3, -194); addPickup('barm', 0, -191); } } },
 ] },
   2: { name: 'PARR', sub: 'Parr – Take a Fresh Look',
     brief: ['The taxi dropped you in Parr. Forty quid, and he wouldn\'t go any further than the Ramford.',
