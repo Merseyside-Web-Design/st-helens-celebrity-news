@@ -2,7 +2,8 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>PIE HARD: The Siege of Westfield Street – St Helens Celebrity News</title>
 <meta name="description" content="PIE HARD – a first-person food fight down Westfield Street, St Helens on a Saturday night. Pie launcher, mushy-pea shotgun, barm-cake grenades and the hen party from hell. An SHCN original.">
 <link rel="canonical" href="https://sthelenscelebritynews.co.uk/pie-hard/">
@@ -72,6 +73,36 @@ kbd{display:inline-block;min-width:26px;padding:1px 6px;margin-right:4px;backgro
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:16px 0}
 .stats div{background:rgba(255,255,255,.06);padding:10px;text-align:center}.stats span{display:block;font-size:11px;color:#bbb}.stats b{font:14px "Press Start 2P",monospace;color:var(--orange)}
 #ph-rank{text-align:center;font:18px Bungee,Impact,sans-serif;color:#39ff14;margin:4px 0 6px}
+/* phones: touch controls */
+#ph-touch{position:fixed;inset:0;z-index:6;display:none;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.touch.playing #ph-touch{display:block}
+#ph-stick{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:3px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);display:none;pointer-events:none}
+#ph-knob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(253,161,56,.7);border:3px solid #fff}
+.tbtn{position:absolute;border-radius:50%;border:3px solid rgba(255,255,255,.7);background:rgba(16,8,34,.55);color:#fff;font:9px "Press Start 2P",monospace;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4;touch-action:none}
+.tbtn.on{background:rgba(253,161,56,.75);color:#400040}
+#tb-fire{right:calc(26px + env(safe-area-inset-right));bottom:22px;width:92px;height:92px;font-size:12px;border-color:var(--orange)}
+#tb-jump{right:calc(132px + env(safe-area-inset-right));bottom:18px;width:62px;height:62px}
+#tb-gren{right:calc(118px + env(safe-area-inset-right));bottom:96px;width:58px;height:58px}
+#tb-swap{right:calc(40px + env(safe-area-inset-right));bottom:128px;width:58px;height:58px}
+#tb-pause{left:50%;top:8px;transform:translateX(-50%);width:auto;height:auto;border-radius:6px;padding:6px 10px}
+#ph-rotate{position:fixed;inset:0;z-index:20;display:none;background:var(--ink);color:#fff;text-align:center;align-items:center;justify-content:center;flex-direction:column;padding:24px;font:12px/1.8 "Press Start 2P",monospace}
+#ph-rotate b{font:40px Bungee,Impact,sans-serif;color:var(--orange);display:block;margin-bottom:14px}
+@media (orientation:portrait){body.touch #ph-rotate{display:flex}}
+body.touch .desktop-only{display:none}body.touch .mobile-only{display:block}
+body.touch #ph-canvas{cursor:default}
+/* small landscape screens: tighter HUD and overlays */
+@media (max-height:500px){
+  .ov{align-items:flex-start;padding:10px}.card{padding:14px 16px;margin:auto 0}.logo{display:none}
+  #ph-title .card{display:flex;flex-direction:column}#ph-title h1{order:1}#ph-title .brief{order:2}#ph-title #ph-start{order:3}#ph-title #ph-best{order:4}#ph-title .levels{order:5}
+  #ph-title .mobile-only,#ph-title .desktop-only{order:6;margin-top:10px}#ph-title .card>.small:last-child{order:7}.brief p{font-size:11px;margin-bottom:4px}.box li{font-size:11px}h1{font-size:30px}h1 small{font-size:9px}.brief{margin:10px 0;padding:10px}.brief p{font-size:12px}.brief .who{display:none}
+  .btn{padding:12px;font-size:13px}.cols{margin:6px 0 10px}
+  .hp{left:12px;bottom:auto;top:10px;width:160px}.hp .lbl{display:none}.hp .bar{height:14px;border-width:2px}#ph-hptxt{font-size:8px;top:1px}
+  #ph-obj{left:12px;top:32px;font-size:8px;padding:5px 8px;max-width:40vw}
+  #ph-score{right:12px;top:10px;font-size:9px}#ph-feed{right:12px;top:30px;font-size:7px}
+  .wp{right:12px;bottom:auto;top:34px}body:not(.touch) .wp{top:auto;bottom:12px}#ph-weap{font-size:8px}#ph-ammo{font-size:13px;margin:4px 0}#ph-gren{font-size:7px}
+  #ph-banner b{font-size:22px}#ph-banner span{font-size:8px}#ph-boss{top:52px}#ph-bossname{font-size:8px}
+  #ph-toast{bottom:auto;top:40%;font-size:9px}
+}
 .back{position:fixed;left:12px;top:10px;z-index:11;font:10px "Press Start 2P",monospace;background:rgba(0,0,0,.5);padding:8px 10px;text-decoration:none}
 </style>
 </head>
@@ -91,6 +122,14 @@ kbd{display:inline-block;min-width:26px;padding:1px 6px;margin-right:4px;backgro
   <div class="wp"><div id="ph-weap">PIE LAUNCHER</div><div id="ph-ammo">14 PIES</div><div id="ph-gren">BARM CAKES × 2</div></div>
 </div>
 
+<div id="ph-touch" aria-hidden="true">
+  <div id="ph-stick"><div id="ph-knob"></div></div>
+  <div class="tbtn" id="tb-fire">FIRE</div><div class="tbtn" id="tb-jump">JUMP</div>
+  <div class="tbtn" id="tb-gren">BARM</div><div class="tbtn" id="tb-swap">SWAP</div>
+  <div class="tbtn" id="tb-pause">PAUSE</div>
+</div>
+<div id="ph-rotate"><b>↻</b>Turn your phone sideways<br>to play PIE HARD</div>
+
 <div class="ov" id="ph-title">
   <div class="card">
     <img class="logo" src="../img/scn-logo-mobile.png" alt="St Helens Celebrity News">
@@ -102,18 +141,21 @@ kbd{display:inline-block;min-width:26px;padding:1px 6px;margin-right:4px;backgro
         <p>Your mission: get from the kebab shop to the taxi rank alive. Your weapons: whatever we could get from the chippy. Whatever you do, <b>don't upset the hen party.</b></p>
       </div>
     </div>
+    <div class="mobile-only">
+      <div class="cols">
+        <div class="box"><h3>MOVE</h3><ul><li>Left thumb anywhere – walk</li><li>Push it all the way – leg it</li><li>JUMP button</li></ul></div>
+        <div class="box"><h3>FIGHT</h3><ul><li>Right thumb – look and aim</li><li>FIRE – hold to keep firing</li><li>SWAP – pies / mushy peas</li><li>BARM – barm-cake grenade</li></ul></div>
+      </div>
+    </div>
     <div class="desktop-only">
       <div class="cols">
         <div class="box"><h3>MOVE</h3><ul><li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk</li><li><kbd>Shift</kbd> leg it</li><li><kbd>Space</kbd> jump</li><li>Mouse to look</li></ul></div>
         <div class="box"><h3>FIGHT</h3><ul><li>Left click – fire</li><li><kbd>1</kbd> Pie launcher</li><li><kbd>2</kbd> Mushy-pea shotgun</li><li><kbd>G</kbd> / right click – barm-cake grenade</li><li><kbd>Esc</kbd> pause</li></ul></div>
       </div>
+    </div>
       <button class="btn" id="ph-start" type="button">Click to play</button>
       <p class="small" id="ph-best"></p>
       <div class="levels" id="ph-levels"></div>
-    </div>
-    <div class="mobile-only">
-      <p style="text-align:center"><b>PIE HARD needs a keyboard and mouse.</b><br>Come back on a computer, or have a go at the <a href="../arcade.html">other SHCN arcade games</a> – they work on your phone.</p>
-    </div>
     <p class="small">An SHCN original · Best played with headphones · <a href="../arcade.html">Back to the Arcade</a><br>Characters based on KayKit Adventurers by <a href="https://kaylousberg.com" rel="noopener">Kay Lousberg</a> (CC0)</p>
   </div>
 </div>

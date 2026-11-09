@@ -928,6 +928,51 @@ document.addEventListener('mousemove', (e) => {
   if (!locked || state.mode !== 'play') return;
   player.yaw -= e.movementX * .0022 * sens; player.pitch = clamp(player.pitch - e.movementY * .0022 * sens, -1.4, 1.4);
 });
+// ---- phones and tablets: left thumb walks (floating stick), right thumb looks, buttons for the rest. Landscape only.
+const TOUCH = matchMedia('(hover:none) and (pointer:coarse)').matches || (navigator.maxTouchPoints > 0 && !matchMedia('(pointer:fine)').matches);
+const stick = { x: 0, y: 0, id: null, ox: 0, oy: 0 };
+function goFullscreen() {
+  const el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (!rq || document.fullscreenElement || document.webkitFullscreenElement) return;
+  try { const pr = rq.call(el, { navigationUI: 'hide' }); if (pr && pr.then) pr.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch (e) {}
+}
+if (TOUCH) {
+  document.body.classList.add('touch');
+  pixelRatio = Math.min(window.devicePixelRatio, 1.25); renderer.setPixelRatio(pixelRatio); resize();
+  const T = $('ph-touch'), stickEl = $('ph-stick'), knob = $('ph-knob'), LOOK = .0055;
+  let lookId = null, lx = 0, ly = 0;
+  const look = (x, y) => { if (state.mode !== 'play') return; player.yaw -= (x - lx) * LOOK * sens; player.pitch = clamp(player.pitch - (y - ly) * LOOK * sens, -1.4, 1.4); lx = x; ly = y; };
+  T.addEventListener('pointerdown', (e) => {
+    if (e.target.classList.contains('tbtn')) return;
+    e.preventDefault();
+    if (e.clientX < innerWidth * .42 && stick.id === null) {
+      stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY;
+      stickEl.style.left = e.clientX + 'px'; stickEl.style.top = e.clientY + 'px'; stickEl.style.display = 'block'; knob.style.transform = '';
+    } else if (lookId === null) { lookId = e.pointerId; lx = e.clientX; ly = e.clientY; }
+  });
+  T.addEventListener('pointermove', (e) => {
+    if (e.pointerId === stick.id) {
+      let dx = e.clientX - stick.ox, dy = e.clientY - stick.oy; const d = Math.hypot(dx, dy), m = 55;
+      if (d > m) { dx *= m / d; dy *= m / d; } stick.x = dx / m; stick.y = dy / m; knob.style.transform = `translate(${dx}px,${dy}px)`;
+    } else if (e.pointerId === lookId) look(e.clientX, e.clientY);
+  });
+  const end = (e) => { if (e.pointerId === stick.id) { stick.id = null; stick.x = stick.y = 0; stickEl.style.display = 'none'; } if (e.pointerId === lookId) lookId = null; };
+  T.addEventListener('pointerup', end); T.addEventListener('pointercancel', end);
+  const btn = (id, down, up, drag) => {
+    const el = $(id);
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.add('on'); try { el.setPointerCapture(e.pointerId); } catch (err) {} lx = e.clientX; ly = e.clientY; down(); });
+    if (drag) el.addEventListener('pointermove', (e) => { if (el.classList.contains('on')) look(e.clientX, e.clientY); });   // slide your thumb on FIRE to aim while shooting
+    const off = () => { if (!el.classList.contains('on')) return; el.classList.remove('on'); up && up(); };
+    el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('lostpointercapture', off);
+  };
+  btn('tb-fire', () => { mouseDown = true; if (state.mode === 'play') fire(true); }, () => { mouseDown = false; }, true);
+  btn('tb-jump', () => { keys.Space = true; }, () => { keys.Space = false; });
+  btn('tb-gren', () => { if (state.mode === 'play') throwGrenade(); });
+  btn('tb-swap', () => { if (state.mode === 'play') setWeapon(player.weapon ? 0 : 1); });
+  btn('tb-pause', () => pause());
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+}
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === canvas;
   if (!locked && state.mode === 'play') pause();
@@ -1335,7 +1380,8 @@ function start() {
   if (state.mode === 'title' || state.mode === 'won') { resetRun(); banner(LV.start[0], LV.start[1]); }
   if (state.mode === 'dead') { respawn(); banner('BACK ON YER FEET', 'Last checkpoint · −250 points'); }
   state.mode = 'play'; overlay(null);
-  canvas.requestPointerLock && canvas.requestPointerLock();
+  if (TOUCH) { locked = true; goFullscreen(); }
+  else canvas.requestPointerLock && canvas.requestPointerLock();
 }
 function pause() { if (state.mode !== 'play') return; state.mode = 'paused'; mouseDown = false; overlay('pause'); }
 function die() {
@@ -1363,7 +1409,9 @@ function win() {
 function overlay(which) {
   for (const id of ['title', 'pause', 'dead', 'won']) $('ph-' + id).hidden = id !== which;
   H.hudWrap.style.display = which ? 'none' : 'block';
+  document.body.classList.toggle('playing', !which);
 }
+if (TOUCH) $('ph-start').textContent = 'Tap to play';
 const startBtn = $('ph-start'), startLabel = startBtn.textContent;
 startBtn.disabled = true; startBtn.textContent = 'Loading the lads… 0%';
 loadCharacters((f) => { startBtn.textContent = `Loading the lads… ${Math.round(f * 100)}%`; })
@@ -1376,7 +1424,7 @@ $('ph-again').addEventListener('click', () => { state.mode = 'won'; start(); });
 $('ph-restart').addEventListener('click', () => { state.mode = 'title'; start(); });
 $('ph-sens').value = sens; $('ph-sens').addEventListener('input', (e) => { sens = +e.target.value; STORE.set('ph-sens', sens); });
 $('ph-vol').value = STORE.get('ph-vol', .7); $('ph-vol').addEventListener('input', (e) => { STORE.set('ph-vol', +e.target.value); if (master) master.gain.value = +e.target.value; });
-canvas.addEventListener('click', () => { if (state.mode === 'play' && !locked) canvas.requestPointerLock(); });
+canvas.addEventListener('click', () => { if (!TOUCH && state.mode === 'play' && !locked) canvas.requestPointerLock(); });
 const BEST_KEY = LEVEL_N === 1 ? 'ph-best' : 'ph-best-' + LEVEL_N;
 $('ph-best').textContent = STORE.get(BEST_KEY, 0) ? 'Your best on this level: ' + STORE.get(BEST_KEY, 0) : '';
 // level-specific words on the overlays
@@ -1411,7 +1459,9 @@ function updatePlayer(dt) {
   const want = new THREE.Vector3();
   if (keys.KeyW || keys.ArrowUp) want.add(f); if (keys.KeyS || keys.ArrowDown) want.sub(f);
   if (keys.KeyD || keys.ArrowRight) want.add(r); if (keys.KeyA || keys.ArrowLeft) want.sub(r);
-  const sprint = keys.ShiftLeft || keys.ShiftRight, speed = sprint ? 8.2 : 5.4;
+  const stickMag = Math.hypot(stick.x, stick.y);
+  if (stickMag > .15) { want.addScaledVector(f, -stick.y); want.addScaledVector(r, stick.x); }
+  const sprint = keys.ShiftLeft || keys.ShiftRight || stickMag > .95, speed = sprint ? 8.2 : 5.4;
   if (want.lengthSq()) want.normalize().multiplyScalar(speed);
   const acc = player.onGround ? 12 : 3;
   player.vel.x += (want.x - player.vel.x) * Math.min(1, acc * dt); player.vel.z += (want.z - player.vel.z) * Math.min(1, acc * dt);
