@@ -814,10 +814,11 @@ function daylight() {
 ({ 1: buildStreet, 2: buildParr, 3: buildPark, 4: buildLancs, 5: buildCaves })[LEVEL_N]();
 
 // rain
-const RAIN = 1400, rainGeo = new THREE.BufferGeometry(), rainPos = new Float32Array(RAIN * 3);
-for (let i = 0; i < RAIN; i++) { rainPos[i * 3] = rand(-12, 12); rainPos[i * 3 + 1] = rand(0, 16); rainPos[i * 3 + 2] = rand(-30, 10); }
+// rain: proper streaks (two points per drop) so you can actually see it falling
+const RAIN = 1600, rainGeo = new THREE.BufferGeometry(), rainPos = new Float32Array(RAIN * 6);
+for (let i = 0; i < RAIN; i++) { const x = rand(-12, 12), y = rand(0, 16), z = rand(-30, 10); rainPos.set([x, y, z, x - .06, y - .75, z], i * 6); }
 rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
-const rain = new THREE.Points(rainGeo, new THREE.PointsMaterial({ color: 0x8fa0d8, size: .06, transparent: true, opacity: .6 })); scene.add(rain);
+const rain = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: 0xb8c8f0, transparent: true, opacity: 0, depthWrite: false })); rain.frustumCulled = false; rain.visible = false; scene.add(rain);
 
 // merge all the static props into a few big meshes (one draw call per material)
 function mergeStatic() {
@@ -836,9 +837,10 @@ function mergeStatic() {
   }
 }
 mergeStatic();
-const weather = { on: LEVEL_N !== 5, t: rand(15, 25), wet: LEVEL_N !== 5 ? 1 : 0 };
+// showers on Westfield Street, Parr and the East Lancs only, raining roughly 30% of the time; rain and its sound always together
+const RAINY = [1, 2, 4].includes(LEVEL_N);
+const weather = { on: false, t: rand(8, 16), wet: 0 };
 if (LEVEL_N === 4) makeTraffic();
-if (LEVEL_N === 5) rain.visible = false;
 
 // progression barriers (crowd barriers that drop when an area is cleared)
 const BARRIERS = [-56, -101, -146, -187];
@@ -863,7 +865,7 @@ function audio() {
     const len = AC.sampleRate * 2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     const src = AC.createBufferSource(); src.buffer = buf; src.loop = true;
-    const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2500; rainGain = AC.createGain(); rainGain.gain.value = LEVEL_N === 5 ? 0 : .05;
+    const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1400; f.Q.value = .6; rainGain = AC.createGain(); rainGain.gain.value = 0;
     src.connect(f); f.connect(rainGain); rainGain.connect(master); src.start();
     // club thump
     clubGain = AC.createGain(); clubGain.gain.value = 0; clubGain.connect(master);
@@ -1557,16 +1559,19 @@ function frame() {
   vm.position.set(Math.cos(player.bob) * .012, Math.abs(Math.sin(player.bob)) * .012 - (swapT > 0 ? swapT : 0), kick * .08);
   vm.rotation.x = kick * .25;
   // weather: showers come and go; sound and rain fade together
-  weather.t -= dt; if (weather.t <= 0) { weather.on = !weather.on; weather.t = weather.on ? rand(18, 35) : rand(45, 90); }
-  weather.wet = clamp(weather.wet + (weather.on && LEVEL_N !== 5 ? 1 : -1) * dt * .25, 0, 1);
-  rain.visible = weather.wet > .02; rain.material.opacity = .6 * weather.wet;
-  if (rainGain) rainGain.gain.value = .05 * weather.wet;
+  weather.t -= dt; if (weather.t <= 0) { weather.on = RAINY && !weather.on; weather.t = weather.on ? rand(15, 25) : rand(35, 55); }
+  weather.wet = clamp(weather.wet + (weather.on ? 1 : -1) * dt * .5, 0, 1);
+  rain.visible = weather.wet > .01; rain.material.opacity = .55 * weather.wet;
+  if (rainGain) rainGain.gain.value = rain.visible ? .07 * weather.wet : 0;
   // rain follows the player
   const rp = rainGeo.attributes.position.array;
-  for (let i = 0; i < RAIN; i++) {
-    rp[i * 3 + 1] -= dt * 14; if (rp[i * 3 + 1] < 0) { rp[i * 3 + 1] = 16; rp[i * 3] = camera.position.x + rand(-12, 12); rp[i * 3 + 2] = camera.position.z + rand(-26, 10); }
+  if (rain.visible) {
+    for (let i = 0; i < RAIN; i++) { const k = i * 6;
+      rp[k + 1] -= dt * 16; rp[k + 4] -= dt * 16;
+      if (rp[k + 4] < 0) { const x = camera.position.x + rand(-12, 12), y = rand(12, 17), z = camera.position.z + rand(-26, 10); rp[k] = x; rp[k + 1] = y; rp[k + 2] = z; rp[k + 3] = x - .06; rp[k + 4] = y - .75; rp[k + 5] = z; }
+    }
+    rainGeo.attributes.position.needsUpdate = true;
   }
-  rainGeo.attributes.position.needsUpdate = true;
   // lights follow the player; neon flicker
   if ((frameNo++ & 7) === 0) updateLightPools();
   for (const L of NEON_POOL) L.intensity = L.userData.flick && Math.random() < .04 ? 1.5 : 7;
@@ -1595,4 +1600,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 hud(); overlay('title'); frame();
-window.__ph = { state, player, enemies, start, ENCOUNTERS, fire, throwGrenade, setWeapon, stats, damageEnemy, get score() { return score; }, get taxi() { return taxiArrive; }, exitAt: LV.exit.at, cars, renderer, scene, fx, decals };
+window.__ph = { state, player, enemies, start, ENCOUNTERS, fire, throwGrenade, setWeapon, stats, damageEnemy, get score() { return score; }, weather, get taxi() { return taxiArrive; }, exitAt: LV.exit.at, cars, renderer, scene, fx, decals };
