@@ -115,6 +115,27 @@ body.touch #ph-canvas{cursor:default}
 #ph-film{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.5));pointer-events:none}
 #ph-scoops{margin:10px 0;font-size:12px;text-align:center}#ph-scoops b{display:block;margin-bottom:6px;color:var(--orange)}#ph-scoops a{display:block;padding:2px 0}
 @media (max-height:500px){#ph-call{font-size:20px;top:30%}#ph-combo{right:12px;top:30%}#ph-combo b{font-size:17px}#ph-radio{left:50%;transform:translateX(-50%);bottom:auto;top:58px;font-size:10px;padding:5px 9px;max-width:44vw}#ph-buff{bottom:auto;top:26%;font-size:8px}}
+#ph-use{position:absolute;left:50%;top:62%;transform:translateX(-50%);display:none;background:rgba(16,8,34,.85);border:2px solid var(--orange);padding:8px 14px;font:10px "Press Start 2P",monospace;white-space:nowrap}
+#ph-clock{position:absolute;left:50%;top:58px;transform:translateX(-50%);display:none;font:24px "Press Start 2P",monospace;color:#ff3b3b;background:#140000;border:3px solid #500;padding:10px 14px;text-shadow:0 0 12px #f00;letter-spacing:2px;white-space:nowrap}
+#ph-clock.late{color:#ffe14f;text-shadow:0 0 12px #fa0;border-color:#a60}#ph-clock.final{color:#fff;background:#c00000;border-color:#fff;animation:phclk .25s steps(2) infinite}
+@keyframes phclk{50%{transform:translateX(-50%) scale(1.12)}}
+#ph-lights{position:absolute;inset:0;background:#fff8d0;opacity:0;pointer-events:none}
+@media (max-height:500px){#ph-clock{font-size:15px;top:40px;padding:6px 9px}}
+#ph-use kbd{background:var(--orange);color:#400040;padding:2px 6px;margin-right:6px;font:inherit}
+#tb-use{display:none;left:50%;bottom:22px;transform:translateX(-50%);width:auto;height:auto;border-radius:8px;padding:12px 22px;font-size:12px;border-color:var(--orange);background:rgba(253,161,56,.3)}
+body.canuse #tb-use{display:flex}body.touch #ph-use{top:auto;bottom:74px}
+#ph-cab{position:fixed;inset:0;z-index:15;background:#0c0616;display:flex;flex-direction:column}
+#ph-cab[hidden]{display:none}
+.cabbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;background:#400040;border-bottom:3px solid var(--orange);font:11px "Press Start 2P",monospace;color:var(--orange)}
+.cabbar button{font:10px "Press Start 2P",monospace;background:var(--orange);color:#400040;border:0;padding:9px 12px;cursor:pointer}
+#ph-cabframe{flex:1;width:100%;border:0;background:#100822}#ph-cabframe[hidden]{display:none}
+#ph-mach{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;text-align:center;background:radial-gradient(circle at 50% 30%,#4a1470,#12061e)}
+#ph-mach[hidden]{display:none}#ph-mach h2{font:44px Bungee,Impact,sans-serif;color:#ffe14f;text-shadow:0 0 18px #ff2a6a,3px 3px 0 #000;margin:0}
+.reels{display:flex;gap:10px;background:#fff;border:6px solid #ffe14f;border-radius:10px;padding:10px 14px;box-shadow:0 0 30px #ff2a6a}
+.reels span{display:block;width:84px;height:92px;font-size:64px;line-height:92px;background:#f4efe2;border:2px solid #111;border-radius:6px;color:#c8102e;font-weight:bold}
+.reels.claw{background:rgba(190,230,255,.15);border-color:#39e0ff;min-height:150px;min-width:220px;justify-content:center;align-items:flex-start}.reels.claw span{background:none;border:0}
+#ph-machmsg{font:12px/1.7 "Press Start 2P",monospace;max-width:560px;min-height:3.4em;margin:0}#ph-machgo{max-width:340px}
+@media (max-height:500px){#ph-mach{gap:8px}#ph-mach h2{font-size:26px}.reels span{width:62px;height:66px;font-size:44px;line-height:66px}#ph-machmsg{font-size:9px}.cabbar{padding:5px 10px;font-size:9px}}
 .back{position:fixed;left:12px;top:10px;z-index:11;font:10px "Press Start 2P",monospace;background:rgba(0,0,0,.5);padding:8px 10px;text-decoration:none}
 </style>
 </head>
@@ -130,6 +151,7 @@ body.touch #ph-canvas{cursor:default}
   <div id="ph-boss"><div id="ph-bossname">THE HEN PARTY</div><div class="bar"><div id="ph-bossbar"></div></div></div>
   <div id="ph-banner"></div>
   <div id="ph-toast"></div>
+  <div id="ph-use"></div><div id="ph-clock"></div><div id="ph-lights"></div>
   <div id="ph-dir"><span></span></div><div id="ph-call"></div><div id="ph-combo"></div><div id="ph-radio"></div><div id="ph-buff"></div><div id="ph-film"></div>
   <div class="hp"><div class="lbl">HEALTH</div><div class="bar"><div id="ph-hp"></div><span id="ph-hptxt">100</span></div></div>
   <div class="wp"><div id="ph-weap">PIE LAUNCHER</div><div id="ph-ammo">14 PIES</div><div id="ph-gren">BARM CAKES × 2</div></div>
@@ -139,7 +161,12 @@ body.touch #ph-canvas{cursor:default}
   <div id="ph-stick"><div id="ph-knob"></div></div>
   <div class="tbtn" id="tb-fire">FIRE</div><div class="tbtn" id="tb-jump">JUMP</div>
   <div class="tbtn" id="tb-gren">BARM</div><div class="tbtn" id="tb-swap">SWAP</div>
-  <div class="tbtn" id="tb-pause">PAUSE</div>
+  <div class="tbtn" id="tb-pause">PAUSE</div><div class="tbtn" id="tb-use">USE</div>
+</div>
+<div id="ph-cab" hidden>
+  <div class="cabbar"><b id="ph-cabname"></b><button type="button" id="ph-cabx">&lt; Back to the arcade floor <span class="desktop-only" style="display:inline">(Esc)</span></button></div>
+  <iframe id="ph-cabframe" title="Arcade game" allow="autoplay"></iframe>
+  <div id="ph-mach" hidden><h2 id="ph-machtitle"></h2><div id="ph-machshow" class="reels"></div><p id="ph-machmsg"></p><button type="button" class="btn" id="ph-machgo">SPIN</button></div>
 </div>
 <div id="ph-rotate"><b>↻</b>Turn your phone sideways<br>to play PIE HARD</div>
 
@@ -163,7 +190,7 @@ body.touch #ph-canvas{cursor:default}
     <div class="desktop-only">
       <div class="cols">
         <div class="box"><h3>MOVE</h3><ul><li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk</li><li><kbd>Shift</kbd> leg it</li><li><kbd>Space</kbd> jump</li><li>Mouse to look</li></ul></div>
-        <div class="box"><h3>FIGHT</h3><ul><li>Left click – fire</li><li><kbd>1</kbd> Pie launcher</li><li><kbd>2</kbd> Mushy-pea shotgun</li><li><kbd>3</kbd> Aarf-knackers (bricks, when you find some)</li><li>Head shots do double</li><li><kbd>G</kbd> / right click – barm-cake grenade</li><li><kbd>Esc</kbd> pause</li></ul></div>
+        <div class="box"><h3>FIGHT</h3><ul><li>Left click – fire</li><li><kbd>1</kbd> Pie launcher</li><li><kbd>2</kbd> Mushy-pea shotgun</li><li><kbd>3</kbd> Aarf-knackers (bricks, when you find some)</li><li><kbd>E</kbd> Use machines in Lucky Strike / chat up in Nexus</li><li>Head shots do double</li><li><kbd>G</kbd> / right click – barm-cake grenade</li><li><kbd>Esc</kbd> pause</li></ul></div>
       </div>
     </div>
       <button class="btn" id="ph-start" type="button">Click to play</button>

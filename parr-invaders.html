@@ -70,6 +70,6 @@
 </footer>
 </div>
 <script>(function(){var m=document.querySelector('.masthead'),b=document.documentElement;if(!m||!('IntersectionObserver' in window)){b.classList.add('scrolled');return;}new IntersectionObserver(function(e){b.classList.toggle('scrolled',!e[0].isIntersecting);}).observe(m);document.addEventListener('click',function(ev){var d=document.querySelector('.navbar details[open]');if(d&&!d.contains(ev.target))d.removeAttribute('open');});})();</script>
-<script src="parr-invaders.js"></script>
+<script>if(/[?&]embed=1/.test(location.search)){document.documentElement.classList.add('embed');var st=document.querySelector('.pi-stage');document.body.textContent='';document.body.appendChild(st);addEventListener('keydown',function(e){if(e.key==='Escape')parent.postMessage('shcn-exit','*')});}</script><script src="parr-invaders.js"></script>
 </body>
 </html>

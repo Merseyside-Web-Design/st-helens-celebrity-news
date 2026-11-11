@@ -107,6 +107,7 @@ export const LOOKS = {
     cells: { r0c3: '#2a2c3a', r0c7: '#222430', r0c6: '#1a1c24', r0c4: '#3a3c4a', r1c7: '#1a1c24', r1c0: KEY, r1c1: '#111111', r1c2: '#e9c400', r0c1: pick(HAIR), r0c0: pick(SKIN) }, hoops: true }),
   piebaron: () => ({ base: 'Barbarian', hide: /Hat|Cape/, keep: /Mug/, scale: 1.9, chef: true, cells: { r1c0: KEY, r1c1: KEY, r2c3: '#f4f4f4', r0c6: '#3a2414', r0c7: '#2a2a2a', r0c1: '#8a3a12', r0c2: '#8a3a12' }, hoops: true }),
   inspector: () => ({ base: 'Mage', hide: /Hat|Cape/, hardhat: '#f4f4f4', cells: { r1c0: '#f4f4f4', r1c7: '#e8e8e8', r2c2: '#39a0ff', r0c5: '#222222', r0c4: '#dddddd', r0c3: '#f4f4f4', r2c3: '#2a3553', r0c1: pick(HAIR), r0c0: pick(SKIN) } }),
+  attendant: () => ({ base: 'Mage', hide: /Hat|Cape/, tache: true, cap: '#c8102e', cells: { r1c0: '#ffe14f', r1c7: '#c8102e', r2c2: '#c8102e', r0c5: '#222222', r0c4: '#dddddd', r0c3: '#f4f4f4', r2c3: '#1a1a22', r0c1: '#888888', r0c0: '#f2c29b' } }),
   keeper: () => ({ base: 'Knight', hide: /Helmet|Cape/, scale: 1.1, cap: '#1f3a22', peak: true,
     cells: { r0c3: '#2a4a2c', r0c7: '#1f3a22', r0c6: '#1a2a1c', r0c4: '#3a5a3c', r1c7: '#1a2a1c', r1c0: '#e9c400', r1c1: '#111111', r1c2: '#e9c400', r0c1: pick(['#555555', '#888888', '#2a1a0e']), r0c0: pick(SKIN) } }),
 };

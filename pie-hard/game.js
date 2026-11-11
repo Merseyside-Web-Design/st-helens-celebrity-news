@@ -186,6 +186,149 @@ function coach(x, z) {
   for (const wz of [-3.8, 3.8]) for (const wx of [-1.3, 1.3]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .3, 12), PROPMAT.tyre); w.rotation.z = Math.PI / 2; w.position.set(wx, .5, wz); g.add(w); }
   g.position.set(x, 0, z); scene.add(g); addCollider(x, z, 2.8, 11.2); return g;
 }
+// ================================================================ Lucky Strike Amusements: a walk-in arcade at the top of Westfield Street
+// ---------- NEXUS: the niteclub you can actually get into ----------
+let NEX = null;
+function buildClub(z0, len, FRONT, body) {
+  const DEPTH = 10, H3 = 3.6, z1 = z0 - len, doorZ = z0 - len / 2, xi = FRONT + .3, xb = FRONT + DEPTH - .3, xc = (xi + xb) / 2;
+  NEX = { s: -1, x0: xi, x1: xb, z0: z0 - .3, z1: z1 + .3, doorZ, men: [], girl: null, st: 'idle', clock: 104, spills: 0, snog: 0, spillT: 0, tries: 0, target: null, ga: 0, df: { x: xc + .6, z: z1 + 4.2 } };
+  const dark = lam({ color: 0x1a0c2c, emissive: 0x200c38, emissiveIntensity: .8 });
+  const box = (w, h, d, x, y, z, m) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(-x, y, z); scene.add(b); return b; };
+  const wallPlane = (w, h, tex, x, y, z, ry, em = .9) => { const m = lam({ map: tex, emissive: 0xffffff, emissiveIntensity: em }); m.emissiveMap = tex; const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); p.position.set(-x, y, z); p.rotation.y = ry; scene.add(p); return p; };
+  const segL = z0 - (doorZ + 1.3), segR = (doorZ - 1.3) - z1;
+  box(.3, H3, segL, FRONT + .15, H3 / 2, z0 - segL / 2, body); box(.3, H3, segR, FRONT + .15, H3 / 2, z1 + segR / 2, body);
+  box(.3, H3 - 2.7, 2.6, FRONT + .15, 2.7 + (H3 - 2.7) / 2, doorZ, body);
+  box(DEPTH, H3, .3, FRONT + DEPTH / 2, H3 / 2, z0 - .15, dark); box(DEPTH, H3, .3, FRONT + DEPTH / 2, H3 / 2, z1 + .15, dark); box(.3, H3, len, xb + .15, H3 / 2, doorZ, dark);
+  const carpet = lam({ map: canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#1c0e30'; g.fillRect(0, 0, w, h); for (let i = 0; i < 260; i++) { g.fillStyle = pick(['#2a1648', '#34104a', '#141028', '#402058']); g.fillRect(rand(0, w), rand(0, h), rand(3, 10), rand(3, 10)); }
+    for (let i = 0; i < 14; i++) { g.fillStyle = 'rgba(90,60,30,.35)'; g.beginPath(); g.arc(rand(0, w), rand(0, h), rand(6, 18), 0, 7); g.fill(); } }, [5, 8]), emissive: 0x241040, emissiveIntensity: .7 });
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, len), carpet); fl.rotation.x = -Math.PI / 2; fl.position.set(-(FRONT + DEPTH / 2), .03, doorZ); scene.add(fl);
+  const ce = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, len), lam({ color: 0x0a0612 })); ce.rotation.x = Math.PI / 2; ce.position.set(-(FRONT + DEPTH / 2), H3 - .03, doorZ); scene.add(ce);
+  // the bar, down the top end
+  box(5.6, 1.1, .8, xc, .55, z0 - 1.5, lam({ color: 0x5a3018, emissive: 0x3a1a0a, emissiveIntensity: .8 })); box(5.8, .08, 1, xc, 1.14, z0 - 1.5, lam({ color: 0xb06bff, emissive: 0xb06bff, emissiveIntensity: .9 }));
+  addCollider(-xc, z0 - 1.5, 5.8, 1);
+  wallPlane(5.6, 1.9, canvasTex(512, 176, (g, w, h) => { g.fillStyle = '#0c0616'; g.fillRect(0, 0, w, h); g.fillStyle = '#b06bff'; g.fillRect(0, 60, w, 4); g.fillRect(0, 130, w, 4);
+    for (let r = 0; r < 2; r++) for (let x = 10; x < w - 10; x += 22) { g.fillStyle = pick(['#39e0ff', '#7cff4f', '#ff4fd8', '#ffe14f', '#ff7a1a', '#e8e8e8']); g.fillRect(x, 78 + r * 70 - 44 - (r ? 0 : 18) + 44, 12, 40 - r * 6); g.fillRect(x + 4, 78 + r * 70 - 30 + 18 * r, 4, 12); }
+    g.fillStyle = '#ffe14f'; g.font = 'bold 30px Arial'; g.textAlign = 'center'; g.fillText('2-4-1 ALCOPOPS  ·  PINTS £1.20  ·  NO TABS', w / 2, 36); }), xc, 2.2, z0 - .32, Math.PI);
+  // back wall
+  wallPlane(5, 1.5, shopTex('NEXUS', '#b06bff', 'lit'), xb - .02, 2.5, doorZ, Math.PI / 2);
+  const poster = (t1, t2, col) => canvasTex(256, 320, (g, w, h) => { g.fillStyle = '#12061e'; g.fillRect(0, 0, w, h); g.strokeStyle = col; g.lineWidth = 8; g.strokeRect(6, 6, w - 12, h - 12); g.fillStyle = col; g.textAlign = 'center'; g.font = 'bold 40px Arial';
+    t1.split('|').forEach((s, i) => g.fillText(s, w / 2, 80 + i * 48)); g.fillStyle = '#fff'; g.font = 'bold 20px Arial'; t2.split('|').forEach((s, i) => g.fillText(s, w / 2, 232 + i * 28)); });
+  wallPlane(1.4, 1.75, poster('SLOWIES|1:50 AM', 'Last chance saloon|Lights up 2:00 SHARP', '#ff4fd8'), xb - .02, 2.0, doorZ - 4.6, Math.PI / 2);
+  wallPlane(1.4, 1.75, poster('NO|TRAINERS', 'No pies. No Wiganers.|Management: A. Shacklebottom', '#ffe14f'), xb - .02, 2.0, doorZ + 4.6, Math.PI / 2);
+  // DJ booth in the corner by the dance floor
+  box(2.4, 1.25, 1, xb - 1.5, .62, z1 + 1.1, lam({ color: 0x2a1040, emissive: 0x3a1460, emissiveIntensity: .9 })); addCollider(-(xb - 1.5), z1 + 1.1, 2.6, 1.2);
+  wallPlane(2.2, .7, canvasTex(256, 80, (g, w, h) => { g.fillStyle = '#12061e'; g.fillRect(0, 0, w, h); g.fillStyle = '#39e0ff'; g.font = 'bold 34px Arial'; g.textAlign = 'center'; g.fillText('DJ ERIC SPANNER', w / 2, 52, w - 12); }), xb - 1.5, .7, z1 + 1.62, 0);
+}
+let ARC = null;
+function buildArcade(z0, FRONT) {
+  const LEN = 14, DEPTH = 12, H3 = 3.6, z1 = z0 - LEN, doorZ = z0 - LEN / 2, xi = FRONT + .3, xb = FRONT + DEPTH, xc = (xi + xb) / 2;
+  ARC = { x0: xi, x1: xb, z0: z0 - .3, z1: z1 + .3, doorZ, machines: [], npc: null, said: 0 };
+  const wallOut = lam({ color: 0x1a0a2a }), wallIn = lam({ color: 0x3a1450, emissive: 0x2a0a40, emissiveIntensity: .6 }), gold = lam({ color: 0xd8b84a, emissive: 0x6a5010 });
+  // shell: front wall with a doorway, sides, back, upstairs and roof
+  const box = (w, h, d, x, y, z, m) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); scene.add(b); return b; };
+  const segL = z0 - (doorZ + 1.3), segR = (doorZ - 1.3) - z1;
+  box(.3, H3, segL, FRONT + .15, H3 / 2, z0 - segL / 2, wallOut); box(.3, H3, segR, FRONT + .15, H3 / 2, z1 + segR / 2, wallOut);
+  box(.3, H3 - 2.7, 2.6, FRONT + .15, 2.7 + (H3 - 2.7) / 2, doorZ, wallOut);
+  for (const dz of [-1.36, 1.36]) box(.34, 2.7, .12, FRONT + .15, 1.35, doorZ + dz, gold);
+  box(DEPTH, H3, .3, xc, H3 / 2, z0 - .15, wallIn); box(DEPTH, H3, .3, xc, H3 / 2, z1 + .15, wallIn); box(.3, H3, LEN, xb + .15, H3 / 2, doorZ, wallIn);
+  const brick = lam({ map: brickTex('#7a3a2a', '#3a2a28') });
+  box(DEPTH + .6, 3.6, LEN, FRONT + DEPTH / 2 + .3, H3 + 1.8, doorZ, brick);
+  const roof = new THREE.Mesh(gableGeo(DEPTH + .8, 2.4, LEN + .1), lam({ color: 0x34343e })); roof.position.set(FRONT + DEPTH / 2 + .3, H3 + 3.6, doorZ); scene.add(roof);
+  // the sign: chasing bulbs round big yellow letters
+  const signTexA = canvasTex(1024, 256, (g, w, h) => { g.fillStyle = '#12061e'; g.fillRect(0, 0, w, h);
+    g.font = 'bold 120px Arial Black, Impact, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = '#ff2a6a'; g.shadowBlur = 30; g.fillStyle = '#ffe14f'; g.fillText('LUCKY STRIKE', w / 2, 104);
+    g.shadowBlur = 0; g.font = 'bold 34px Arial'; g.fillStyle = '#39e0ff'; g.fillText('AMUSEMENTS  ·  VIDEO GAMES  ·  FRUIT MACHINES  ·  2p FALLS', w / 2, 206);
+    for (let x = 16; x < w; x += 32) for (const y of [14, h - 14]) { g.fillStyle = (x / 32) % 2 ? '#fff6b0' : '#ff5a3b'; g.beginPath(); g.arc(x, y, 8, 0, 7); g.fill(); } });
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(LEN - .6, 3.2), new THREE.MeshBasicMaterial({ map: signTexA })); sign.position.set(FRONT - .04, H3 + 1.7, doorZ); sign.rotation.y = -Math.PI / 2; scene.add(sign);
+  for (const [dz, c] of [[-4, '#ff2a6a'], [0, '#ffe14f'], [4, '#39e0ff']]) { const gl = new THREE.Sprite(glowMat(c)); gl.position.set(FRONT - .5, H3 + 1.7, doorZ + dz); gl.scale.set(7, 4, 1); scene.add(gl); }
+  neonSpots.push({ pos: new THREE.Vector3(FRONT - 1.6, 3.4, doorZ), color: new THREE.Color('#ffe14f'), flick: true });
+  const open = new THREE.Mesh(new THREE.PlaneGeometry(1.6, .5), new THREE.MeshBasicMaterial({ map: shopTex('OPEN', '#7cff4f', 'dark') })); open.position.set(FRONT - .03, 3.1, doorZ); open.rotation.y = -Math.PI / 2; scene.add(open);
+  // inside: loud carpet, light panels, wall posters
+  const carpet = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#3a1060'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 26; i++) { g.strokeStyle = pick(['#ff5a3b', '#39e0ff', '#ffe14f', '#ff4fd8', '#7cff4f']); g.lineWidth = rand(3, 7); g.beginPath(); const x = rand(0, w), y = rand(0, h); g.arc(x, y, rand(8, 30), rand(0, 6), rand(0, 6)); g.stroke(); }
+    for (let i = 0; i < 40; i++) { g.fillStyle = pick(['#ffe14f', '#39e0ff', '#ff4fd8']); const x = rand(0, w), y = rand(0, h); g.fillRect(x, y, 5, 5); } }, [5, 6]);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, LEN - .6), lam({ map: carpet, emissive: 0xffffff, emissiveIntensity: .32 })); floor.material.emissiveMap = carpet; floor.rotation.x = -Math.PI / 2; floor.position.set(xc, .1, doorZ); scene.add(floor);
+  const step = box(.7, .1, 2.6, FRONT - .1, .05, doorZ, gold);
+  const ceilT = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#14081e'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff2d0'; g.fillRect(34, 34, 60, 60); g.fillStyle = '#ff4fd8'; g.fillRect(0, 0, w, 5); g.fillStyle = '#39e0ff'; g.fillRect(0, 0, 5, h); }, [4, 5]);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, LEN - .6), new THREE.MeshBasicMaterial({ map: ceilT })); ceil.rotation.x = Math.PI / 2; ceil.position.set(xc, H3 - .02, doorZ); scene.add(ceil);
+  for (const [x, z, c] of [[xi + 3, doorZ + 3.5, '#ff4fd8'], [xi + 3, doorZ - 3.5, '#39e0ff'], [xb - 3, doorZ + 3.5, '#ffe14f'], [xb - 3, doorZ - 3.5, '#ff5a3b'], [xc, doorZ, '#fff2d0']]) neonSpots.push({ pos: new THREE.Vector3(x, 2.9, z), color: new THREE.Color(c), flick: false });
+  // ---- machines
+  const loader = new THREE.TextureLoader();
+  function cabinet(x, z, ry, title, col, img, url) {
+    const g = new THREE.Group(), body = lam({ color: col, emissive: col, emissiveIntensity: .25 }), dark = lam({ color: 0x0c0c12 });
+    const b = new THREE.Mesh(new THREE.BoxGeometry(.9, 1.95, .8), body); b.position.y = .975; g.add(b);
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(.94, .34, .5), dark); hood.position.set(0, 1.78, .22); g.add(hood);
+    const tex = loader.load(img); tex.colorSpace = THREE.SRGBColorSpace;
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(.72, .56), new THREE.MeshBasicMaterial({ map: tex })); scr.position.set(0, 1.3, .405); scr.rotation.x = -.12; g.add(scr);
+    const mq = new THREE.Mesh(new THREE.PlaneGeometry(.88, .26), new THREE.MeshBasicMaterial({ map: canvasTex(256, 76, (c2, w, h) => { c2.fillStyle = '#12061e'; c2.fillRect(0, 0, w, h); c2.font = 'bold 30px Arial Black, Arial'; c2.textAlign = 'center'; c2.textBaseline = 'middle'; c2.fillStyle = '#ffe14f'; c2.fillText(title.toUpperCase(), w / 2, h / 2 + 2, w - 12); }) })); mq.position.set(0, 1.78, .475); g.add(mq);
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(.9, .1, .42), dark); panel.position.set(0, .93, .5); panel.rotation.x = .25; g.add(panel);
+    const stick = new THREE.Mesh(new THREE.SphereGeometry(.05, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff2a2a })); stick.position.set(-.2, 1.07, .5); g.add(stick);
+    for (const [bx, bc] of [[.1, 0xffe14f], [.25, 0x39e0ff]]) { const bt = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, .03, 10), new THREE.MeshBasicMaterial({ color: bc })); bt.position.set(bx, 1.0, .52); g.add(bt); }
+    g.position.set(x, .1, z); g.rotation.y = ry; scene.add(g); addCollider(x, z, 1, 1);
+    ARC.machines.push({ x: x + Math.sin(ry) * .9, z: z + Math.cos(ry) * .9, kind: 'game', label: title, url });
+  }
+  const back = xb - .55, fy = -Math.PI / 2;
+  cabinet(back, doorZ + 4.8, fy, 'Parr Invaders', 0x6600ff, '../img/arcade-invaders.jpg', '../parr-invaders.html');
+  cabinet(back, doorZ + 1.6, fy, 'Westfield St Rumble', 0xc8102e, '../img/arcade-rumble.jpg', '../westfield-st-rumble.html');
+  cabinet(back, doorZ - 1.6, fy, 'Cross the East Lancs', 0x1a8a3a, '../img/arcade-eastlancs.jpg', '../cross-the-east-lancs.html');
+  cabinet(back, doorZ - 4.8, fy, 'Pie Snake', 0xfd8a18, '../img/arcade-snake.jpg', '../pie-snake.html');
+  // fruit machine and grabber on the left wall (as you walk in)
+  function bandit(x, z) {
+    const g = new THREE.Group(), body = lam({ color: 0xc8102e, emissive: 0xc8102e, emissiveIntensity: .3 });
+    const b = new THREE.Mesh(new THREE.BoxGeometry(.8, 1.9, .7), body); b.position.y = .95; g.add(b);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(.7, 1.2), new THREE.MeshBasicMaterial({ map: canvasTex(256, 440, (c2, w, h) => { c2.fillStyle = '#12061e'; c2.fillRect(0, 0, w, h); c2.fillStyle = '#ffe14f'; c2.font = 'bold 38px Arial Black, Arial'; c2.textAlign = 'center'; c2.fillText('LUCKY', w / 2, 46); c2.fillText('STRIKE', w / 2, 88);
+      c2.fillStyle = '#fff'; c2.fillRect(18, 120, w - 36, 110); c2.font = '64px serif'; c2.fillText('🥧', 64, 198); c2.fillText('7', 128, 200); c2.fillText('🍺', 194, 198); c2.strokeStyle = '#111'; c2.lineWidth = 4; c2.strokeRect(18, 120, w - 36, 110); c2.beginPath(); c2.moveTo(96, 120); c2.lineTo(96, 230); c2.moveTo(160, 120); c2.lineTo(160, 230); c2.stroke();
+      c2.fillStyle = '#39e0ff'; c2.font = 'bold 22px Arial'; c2.fillText('100 POINTS A SPIN', w / 2, 280); c2.fillStyle = '#ff4fd8'; c2.fillText('777 = JACKPOT', w / 2, 320); for (let i = 0; i < 5; i++) { c2.fillStyle = pick(['#ffe14f', '#ff5a3b', '#7cff4f']); c2.beginPath(); c2.arc(40 + i * 44, 384, 14, 0, 7); c2.fill(); } }) })); face.position.set(0, 1.2, .355); g.add(face);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .7, 6), lam({ color: 0xd0d0d8 })); arm.position.set(.46, 1.2, .1); g.add(arm);
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff2a2a })); knob.position.set(.46, 1.58, .1); g.add(knob);
+    g.position.set(x, .1, z); g.rotation.y = Math.PI; scene.add(g); addCollider(x, z, .9, .9);
+    ARC.machines.push({ x, z: z - .95, kind: 'slots', label: 'the Lucky Strike fruit machine' });
+  }
+  function grabber(x, z) {
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.BoxGeometry(1, .9, 1), lam({ color: 0x39a0ff, emissive: 0x39a0ff, emissiveIntensity: .3 })); base.position.y = .45; g.add(base);
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(.96, 1, .96), new THREE.MeshLambertMaterial({ color: 0xbfe6ff, transparent: true, opacity: .22, depthWrite: false })); glass.position.y = 1.4; g.add(glass);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(1, .22, 1), lam({ color: 0xff4fd8, emissive: 0xff4fd8, emissiveIntensity: .4 })); top.position.y = 2.0; g.add(top);
+    for (let i = 0; i < 9; i++) { const pz = new THREE.Mesh(new THREE.CylinderGeometry(.11, .09, .07, 10), lam({ color: 0xd9a441 })); pz.position.set(rand(-.3, .3), .95 + rand(0, .12), rand(-.3, .3)); g.add(pz); }
+    const claw = new THREE.Mesh(new THREE.ConeGeometry(.09, .2, 3), lam({ color: 0xd0d0d8 })); claw.position.set(.1, 1.6, 0); claw.rotation.x = Math.PI; g.add(claw);
+    const cab = new THREE.Mesh(new THREE.CylinderGeometry(.01, .01, .3, 4), lam({ color: 0xd0d0d8 })); cab.position.set(.1, 1.8, 0); g.add(cab);
+    const mq = new THREE.Mesh(new THREE.PlaneGeometry(.96, .2), new THREE.MeshBasicMaterial({ map: canvasTex(256, 54, (c2, w, h) => { c2.fillStyle = '#12061e'; c2.fillRect(0, 0, w, h); c2.font = 'bold 30px Arial Black, Arial'; c2.textAlign = 'center'; c2.fillStyle = '#ffe14f'; c2.fillText('THE GRABBER', w / 2, 38); }) })); mq.position.set(0, 2.0, -.505); mq.rotation.y = Math.PI; g.add(mq);
+    g.position.set(x, .1, z); scene.add(g); addCollider(x, z, 1.1, 1.1);
+    ARC.machines.push({ x, z: z - 1.05, kind: 'grab', label: 'the Grabber' });
+  }
+  bandit(xi + 3.2, ARC.z0 - .5); bandit(xi + 4.4, ARC.z0 - .5); grabber(xi + 7, ARC.z0 - .7);
+  ARC.machines.splice(-2, 1);                                         // the two bandits share one prompt
+  // 2p falls in the middle (it's on a slant; the attendant will tell you)
+  const pusher = new THREE.Group();
+  const pb = new THREE.Mesh(new THREE.BoxGeometry(1.6, .9, 1.6), lam({ color: 0xffe14f, emissive: 0xffe14f, emissiveIntensity: .25 })); pb.position.y = .45; pusher.add(pb);
+  const pg = new THREE.Mesh(new THREE.BoxGeometry(1.5, .7, 1.5), new THREE.MeshLambertMaterial({ color: 0xbfe6ff, transparent: true, opacity: .2, depthWrite: false })); pg.position.y = 1.25; pusher.add(pg);
+  const pt = new THREE.Mesh(new THREE.BoxGeometry(1.6, .25, 1.6), lam({ color: 0xff5a3b, emissive: 0xff5a3b, emissiveIntensity: .4 })); pt.position.y = 1.72; pusher.add(pt);
+  for (let i = 0; i < 40; i++) { const c = new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, .012, 8), lam({ color: 0xb87333 })); c.position.set(rand(-.6, .6), .92 + rand(0, .05), rand(-.6, .6)); pusher.add(c); }
+  pusher.position.set(xi + 4.6, .1, doorZ - 2.6); scene.add(pusher); addCollider(xi + 4.6, doorZ - 2.6, 1.7, 1.7);
+  ARC.machines.push({ x: xi + 4.6, z: doorZ - 1.4, kind: 'pusher', label: 'the 2p falls' });
+  // change kiosk and the scoreboard on the right wall
+  const kiosk = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.1, .7), lam({ color: 0x2a1040, emissive: 0x2a1040, emissiveIntensity: .5 })); kiosk.position.set(xi + 4.2, .65, ARC.z1 + 1.5); scene.add(kiosk); addCollider(xi + 4.2, ARC.z1 + 1, 2.5, 1.9);
+  const ks = new THREE.Mesh(new THREE.PlaneGeometry(2.2, .5), new THREE.MeshBasicMaterial({ map: shopTex('CHANGE', '#ffe14f', 'dark') })); ks.position.set(xi + 4.2, 2.9, ARC.z1 + .02); scene.add(ks);
+  ARC.kiosk = new THREE.Vector3(xi + 4.2, .1, ARC.z1 + .75);
+  ARC.machines.push({ x: xi + 4.2, z: ARC.z1 + 2.5, kind: 'npc', label: 'Lucky' });
+  const boardC = document.createElement('canvas'); boardC.width = 512; boardC.height = 384; ARC.boardTex = new THREE.CanvasTexture(boardC); ARC.boardTex.colorSpace = THREE.SRGBColorSpace; ARC.boardC = boardC;
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 2.4), new THREE.MeshBasicMaterial({ map: ARC.boardTex })); board.position.set(xb - 3.2, 2.0, ARC.z1 + .02); scene.add(board);
+  drawBoard();
+  // posters: real SHCN headlines on the walls
+  [['GIANT ANTS SPOTTED ON BURGIES', xi + 9.6, 1], ['DOG SHIT LEVELS AT ALL TIME HIGH', xi + 1.2, 1], ['NO PIES ON THE CARPET', xi + 1.4, -1]].forEach(([t, x, side]) => {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.5, .9), new THREE.MeshBasicMaterial({ map: canvasTex(256, 154, (c2, w, h) => { c2.fillStyle = side > 0 ? '#f4efe2' : '#ffe14f'; c2.fillRect(0, 0, w, h); c2.fillStyle = '#6600ff'; c2.fillRect(0, 0, w, 34); c2.fillStyle = '#fda138'; c2.font = 'bold 24px Arial Black, Arial'; c2.textAlign = 'center'; c2.fillText(side > 0 ? 'SHCN' : 'HOUSE RULES', w / 2, 26);
+      c2.fillStyle = '#111'; c2.font = 'bold 22px Arial Black, Arial'; const ws = t.split(' '); let line = '', y = 70; for (const wd of ws) { if (c2.measureText(line + wd).width > w - 20 && line) { c2.fillText(line.trim(), w / 2, y); y += 28; line = ''; } line += wd + ' '; } c2.fillText(line.trim(), w / 2, y); }) }));
+    p.position.set(x, 2.3, side > 0 ? ARC.z0 - .02 : ARC.z1 + .02); if (side > 0) p.rotation.y = Math.PI; scene.add(p); });
+}
+function drawBoard() {
+  if (!ARC) return; const g = ARC.boardC.getContext('2d'), w = 512, h = 384;
+  g.fillStyle = '#0c0616'; g.fillRect(0, 0, w, h); g.strokeStyle = '#ffe14f'; g.lineWidth = 6; g.strokeRect(4, 4, w - 8, h - 8);
+  g.textAlign = 'center'; g.fillStyle = '#ffe14f'; g.font = 'bold 34px Arial Black, Arial'; g.fillText('PIE HARD HALL OF FAME', w / 2, 50);
+  g.font = 'bold 24px monospace'; g.textAlign = 'left';
+  ['WESTFIELD ST', 'PARR', 'TAYLOR PARK', 'EAST LANCS', 'CRANK CAVERNS'].forEach((n, i) => { const v = STORE.get(i ? 'ph-best-' + (i + 1) : 'ph-best', 0); g.fillStyle = v ? '#7cff4f' : '#6a6a80'; g.fillText(`${i + 1} ${n}`, 30, 104 + i * 42); g.textAlign = 'right'; g.fillText(v ? String(v) : '-----', w - 30, 104 + i * 42); g.textAlign = 'left'; });
+  g.fillStyle = '#39e0ff'; g.textAlign = 'center'; g.fillText(`SHCN SCOOPS ${STORE.get('ph-scoops', []).length}/25   ARCADE WINS ${STORE.get('ph-arcwins', 0)}`, w / 2, 340);
+  ARC.boardTex.needsUpdate = true;
+}
 function newsBoard(x, z, headline, ry = 0) {
   const tex = canvasTex(256, 384, (g, w, h) => { g.fillStyle = '#f4efe2'; g.fillRect(0, 0, w, h); g.fillStyle = '#6600ff'; g.fillRect(0, 0, w, 70); g.fillStyle = '#fda138'; g.font = 'bold 50px Arial Black, Arial'; g.textAlign = 'center'; g.fillText('SHCN', w / 2, 54);
     g.fillStyle = '#111'; g.font = 'bold 34px Arial Black, Arial'; const words = headline.toUpperCase().split(' '); let line = '', y = 124;
@@ -261,15 +404,15 @@ function buildStreet() {
         for (let x = 0; x <= w; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); } for (let y = 0; y <= h; y += 64) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
         for (let i = 0; i < 14; i++) { g.fillStyle = 'rgba(160,120,255,.35)'; g.fillRect(Math.floor(rand(0, 8)) * 32 + 2, Math.floor(rand(0, 4)) * 64 + 2, 28, 60); } }), emissive: 0x3a2a6a, emissiveIntensity: .6 });
       glass.emissiveMap = glass.map;
-      const mats = [body, body, slate, body, body, body]; const b = new THREE.Mesh(new THREE.BoxGeometry(10, hgt, len), mats); b.position.set(sx * (FRONT + 5), hgt / 2, zc); scene.add(b);
+      const mats = [body, body, slate, body, body, body]; const b = new THREE.Mesh(new THREE.BoxGeometry(10, hgt - 3.6, len), mats); b.position.set(sx * (FRONT + 5), 3.6 + (hgt - 3.6) / 2, zc); scene.add(b);
       const gw = new THREE.Mesh(new THREE.PlaneGeometry(len * .55, 8), glass); gw.position.set(sx * (FRONT - .03), 8, zc + len * .2); gw.rotation.y = -sx * Math.PI / 2; scene.add(gw);
-      const sign = new THREE.Mesh(new THREE.PlaneGeometry(len - 1, 3.4), lam({ map: shopTex('NEXUS', '#b06bff', 'lit'), emissive: 0xffffff, emissiveIntensity: .7 })); sign.material.emissiveMap = sign.material.map;
-      sign.position.set(sx * (FRONT - .03), 1.9, zc); sign.rotation.y = -sx * Math.PI / 2; scene.add(sign);
-      const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.4, .15, 5), lam({ color: 0x1a1a22 })); canopy.position.set(sx * (FRONT - .7), 3.8, zc); scene.add(canopy);
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(len - 6, 2.2), lam({ map: shopTex('NEXUS', '#b06bff', 'lit'), emissive: 0xffffff, emissiveIntensity: .7 })); sign.material.emissiveMap = sign.material.map;
+      sign.position.set(sx * (FRONT - .06), 4.75, zc); sign.rotation.y = -sx * Math.PI / 2; scene.add(sign);
+      const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.4, .15, 5), lam({ color: 0x1a1a22 })); canopy.position.set(sx * (FRONT - .7), 3.1, zc); scene.add(canopy);
       for (const dz of [-2, 2]) { const rope = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, 1, 6), lam({ color: 0xd8b84a })); rope.position.set(sx * (FRONT - 1.6), .5, zc + dz); scene.add(rope); }
       neonSpots.push({ pos: new THREE.Vector3(sx * (FRONT - 1.4), 3.2, zc), color: new THREE.Color('#b06bff'), flick: true });
-      const glow = new THREE.Sprite(glowMat('#b06bff')); glow.position.set(sx * (FRONT - .3), 3.2, zc); glow.scale.set(9, 3.5, 1); scene.add(glow);
-      addCollider(sx * (FRONT + 5), zc, 10, len); return;
+      const glow = new THREE.Sprite(glowMat('#b06bff')); glow.position.set(sx * (FRONT - .3), 4.7, zc); glow.scale.set(9, 3.5, 1); scene.add(glow);
+      buildClub(z0, len, FRONT, body); return;
     }
     const brick = Math.random() < .45, base = brick ? pick(BRICK) : pick(RENDER), floors = pick([2, 2, 3]), hgt = 3.8 + (floors - 1) * 3;
     const name = special || SHOP_NAMES[nameI++ % SHOP_NAMES.length], neon = pick(NEONS);
@@ -306,6 +449,7 @@ function buildStreet() {
       if (sx < 0 && z < -60 && z > -75) { special = 'club'; len = 16; }
       if (sx > 0 && z <= 4 && z > -2) special = 'KEBABS';
       if (sx < 0 && z < -196 && z > -212) special = 'TAXIS';
+      if (sx > 0 && z <= -166 && !ARC) { buildArcade(z, FRONT); z -= 14; continue; }
       terraceUnit(sx, z, len, special);
       z -= len + (Math.random() < .12 ? 1.8 : 0);                   // the odd ginnel between buildings
     }
@@ -1028,6 +1172,7 @@ if (TOUCH) {
   btn('tb-gren', () => { if (state.mode === 'play') throwGrenade(); });
   btn('tb-swap', () => { if (state.mode === 'play') nextWeapon(); });
   btn('tb-pause', () => pause());
+  btn('tb-use', () => useMachine());
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
   document.addEventListener('contextmenu', (e) => e.preventDefault());
 }
@@ -1113,6 +1258,8 @@ function eyePos() { return new THREE.Vector3(player.pos.x, player.pos.y + 1.65, 
 function fire(click) {
   // every click fires straight away (short minimum gap); holding the button auto-fires at the slower rate
   if (swapT > 0 || (click ? player.clickCool > 0 : player.cool > 0)) return;
+  if (player.inClub) { if (click) toast('The bouncers have your pie launcher. Behave.'); player.clickCool = .6; player.cool = .6; return; }
+  if (player.inArcade) { if (click) { toast('No pies on the carpet! House rules.'); if (ARC.npc) say(ARC.npc, 'Not in here, lad!'); } player.clickCool = .6; player.cool = .6; return; }
   const w = player.weapon;
   if (player.ammo[w] <= 0) { SFX.click(); if (w === 2) { setWeapon(0); return; } toast(pick(['Out of pies! Raid a chippy.', 'No peas left, lad.', 'Ah\'m clempt! (starving – find supplies)'])); player.cool = .4; return; }
   player.ammo[w]--; player.cool = WEAPONS[w].rate; player.clickCool = WEAPONS[w].click; kick = 1; stats.shots++;
@@ -1168,6 +1315,8 @@ function rayHit(o, d, range) {
   return {};
 }
 function throwGrenade() {
+  if (player.inClub) { toast('They frisked you on the way in. No barm cakes.'); return; }
+  if (player.inArcade) { toast('No barm cakes on the carpet either.'); return; }
   if (state.mode !== 'play' || player.grenades <= 0) { if (state.mode === 'play') toast('No barm cakes left!'); return; }
   player.grenades--; SFX.throw();
   const dir = camForward(), m = new THREE.Mesh(BARM_GEO, BARM_MAT); m.scale.setScalar(1.4);
@@ -1442,7 +1591,7 @@ let coachSpawn = false;
 
 // ---------------------------------------------------------------- HUD
 const H = { hp: $('ph-hp'), hpTxt: $('ph-hptxt'), weap: $('ph-weap'), ammo: $('ph-ammo'), gren: $('ph-gren'), obj: $('ph-obj'), feed: $('ph-feed'), toast: $('ph-toast'),
-  hit: $('ph-hit'), vig: $('ph-vig'), boss: $('ph-boss'), bossBar: $('ph-bossbar'), bossName: $('ph-bossname'), banner: $('ph-banner'), score: $('ph-score'), hudWrap: $('ph-hud'), dir: $('ph-dir'), call: $('ph-call'), combo: $('ph-combo'), radio: $('ph-radio'), buff: $('ph-buff') };
+  hit: $('ph-hit'), vig: $('ph-vig'), boss: $('ph-boss'), bossBar: $('ph-bossbar'), bossName: $('ph-bossname'), banner: $('ph-banner'), score: $('ph-score'), hudWrap: $('ph-hud'), use: $('ph-use'), clock: $('ph-clock'), lights: $('ph-lights'), dir: $('ph-dir'), call: $('ph-call'), combo: $('ph-combo'), radio: $('ph-radio'), buff: $('ph-buff') };
 let score = 0;
 const stats = { shots: 0, hits: 0, kos: 0, dmg: 0, taken: 0, start: 0, time: 0 };
 function hud() {
@@ -1582,6 +1731,196 @@ function music() {
   }
 }
 
+// ================================================================ Lucky Strike: using the machines
+const CAB = { el: $('ph-cab'), name: $('ph-cabname'), frame: $('ph-cabframe'), mach: $('ph-mach'), mTitle: $('ph-machtitle'), mShow: $('ph-machshow'), mMsg: $('ph-machmsg'), mGo: $('ph-machgo'), open: null, t0: 0, busy: false };
+let useTarget = null, arcT = 0, arcWelcome = false, arcHint = false;
+const LUCKY_LINES = ['No pies on the carpet!', 'Change machine\'s broke. Has been since 1994.', 'Them grabbers are fixed, between me and you.', 'Mind the 2p falls, it\'s on a slant.', 'Rumble\'s the best one. Don\'t tell the others.', 'You\'re safe in here, lad. They\'re barred.', 'Savus a pie when you go, will yer?'];
+// ---------- NEXUS: don't spill a pint, pull before the lights come up ----------
+const CLUB_SPILL = ['Yer\'ve spilt me pint, dickhead!', 'That were a fresh pint, that!', 'Yer buying me another, soft lad!', 'Watch where yer going, knobhead!', 'Me pint! ME PINT!', 'Outside. Now.', 'That\'s me best shirt, that!'];
+const CLUB_MUTTER = ['Who you lookin\' at?', 'Mind me pint.', 'Yer what?', 'Steady, lad.', 'Not seen you in here before.', 'Touch this pint and yer dead.'];
+const T_EARLY = { kind: 'club', label: 'Chat her up' }, T_SNOG = { kind: 'club', label: 'Go in for the snog' }, T_BUSY = { kind: 'club', label: 'Snogging… hold still' }, T_WON = { kind: 'club', label: 'Say ta-ra' };
+let clubTick = 0, clubBeat = 0, clubSlow = 0, clubHint = false;
+const ctone = (...a) => { if (AC) tone(...a); };
+function clubClockTxt() { const m = Math.floor(NEX.clock); return m >= 120 ? '2:00 AM' : `1:${m - 60} AM`; }
+function clubWaypoint(m, late) {
+  const D = NEX.df; let x = rand(NEX.x0 + .7, NEX.x1 - .7), z = rand(NEX.z1 + .7, NEX.z0 - 2.5);
+  if (late && Math.random() < .45) { x = clamp(D.x + rand(-3.2, 3.2), NEX.x0 + .7, NEX.x1 - .7); z = clamp(D.z + rand(-3.2, 3.2), NEX.z1 + .7, NEX.z0 - 2.5); }
+  m.tx = -x; m.tz = z;
+}
+function addClub() {
+  if (!NEX || NEX.grp) return;
+  const g = NEX.grp = new THREE.Group(), D = NEX.df; scene.add(g);
+  const cols = ['#ff2a6a', '#39e0ff', '#ffe14f', '#7cff4f', '#b06bff', '#ff7a1a'];
+  const mk = (o) => canvasTex(256, 256, (c, w, h) => { c.fillStyle = '#0c0616'; c.fillRect(0, 0, w, h); for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) { c.fillStyle = (i + j + o) % 2 ? cols[(i * 3 + j + o) % 6] : '#2a1444'; c.fillRect(i * w / 6 + 2, j * h / 6 + 2, w / 6 - 4, h / 6 - 4); } });
+  NEX.tiles = [mk(0), mk(1)]; NEX.floor = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.4), new THREE.MeshBasicMaterial({ map: NEX.tiles[0] })); NEX.floor.rotation.x = -Math.PI / 2; NEX.floor.position.set(-D.x, .06, D.z); g.add(NEX.floor);
+  NEX.ball = new THREE.Mesh(new THREE.IcosahedronGeometry(.36, 1), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x8a9aff, emissiveIntensity: .7, flatShading: true })); NEX.ball.position.set(-D.x, 3.05, D.z); g.add(NEX.ball);
+  NEX.spots = cols.map((c) => { const s = new THREE.Sprite(glowMat(c)); s.scale.set(1.5, 1.5, 1); g.add(s); return s; });
+  const ch = (type) => { const c = makeCharacter(type); g.add(c.root); return { g: c.root, c, T: { bubbleY: 2.75 }, scale: c.scale, bubble: null, sayT: 0 }; };
+  NEX.girl = ch('hen'); NEX.girl.c.ctl.loop('Cheer'); NEX.girl.g.position.set(-D.x, 0, D.z);
+  for (let i = 0; i < 7; i++) { const m = ch('drinker'); m.spd = rand(.85, 1.2); m.wait = rand(0, 2); m.g.position.set(-rand(NEX.x0 + 1, NEX.x1 - .7), 0, rand(NEX.z1 + .7, NEX.z0 - 2.5)); clubWaypoint(m); NEX.men.push(m); }
+}
+function bubbleTick(e, dt) { if (e.sayT > 0) { e.sayT -= dt; if (e.sayT <= 0 && e.bubble) { e.g.remove(e.bubble); e.bubble = null; } } }
+function clubEnter() {
+  if (NEX.st === 'won') { toast('You\'ve already pulled in Nexus. Don\'t be greedy.'); return; }
+  const again = NEX.tries++ > 0; NEX.st = 'run'; NEX.clock = 104; NEX.spills = 0; NEX.snog = 0; NEX.snogging = false; NEX.spillT = 2;
+  H.clock.textContent = clubClockTxt(); H.clock.className = ''; H.clock.style.display = 'block';
+  for (const m of NEX.men) { m.g.position.set(-rand(NEX.x0 + 3, NEX.x1 - .7), 0, rand(NEX.z1 + .7, NEX.z0 - 2.5)); clubWaypoint(m); m.wait = rand(0, 1.5); m.c.ctl.loop('Unarmed_Idle'); }
+  banner('NEXUS – 1:44 AM', 'Pull on the dance floor between 1:50 and 2:00. Do NOT spill anyone\'s pint.');
+  toast(again ? 'Somehow it\'s 1:44 again. Time works differently in Nexus.' : 'The bouncers have your pie launcher. Behave.');
+}
+function clubLeave() { if (NEX.st === 'run') NEX.st = 'idle'; NEX.snogging = false; H.clock.style.display = 'none'; }
+function clubSpill(m) {
+  NEX.spills++; NEX.spillT = 1.8; NEX.snogging = false; NEX.snog = 0; say(m, pick(CLUB_SPILL)); m.wait = 1.5; m.c.ctl.once('Unarmed_Melee_Attack_Punch_A');
+  const dx = player.pos.x - m.g.position.x, dz = player.pos.z - m.g.position.z, d = Math.hypot(dx, dz) || 1; player.vel.x += dx / d * 7; player.vel.z += dz / d * 7;
+  player.hp = Math.max(5, player.hp - 10); player.hurtT = .4; shake = .5; SFX.hurt(); if (AC) noise(.25, 900, 'bandpass', .3, 300); hud();
+  if (NEX.spills >= 3) clubChuck('spills'); else toast(`PINT SPILT! ${NEX.spills}/3 – ${NEX.spills === 2 ? 'one more and yer out' : 'mind where yer going'}`);
+}
+function clubChuck(why) {
+  NEX.st = 'idle'; NEX.snogging = false; H.clock.style.display = 'none'; player.pos.x = -(STREET_HALF - 1.6); player.pos.z = NEX.doorZ; player.vel.set(0, 0, 0); player.inClub = false;
+  if (why === 'time') { H.lights.style.transition = 'none'; H.lights.style.opacity = .85; setTimeout(() => { H.lights.style.transition = 'opacity 1.6s'; H.lights.style.opacity = 0; }, 350);
+    if (AC) noise(.5, 2400, 'bandpass', .35, 200); callout('UGLY LIGHTS!<i>2:00 AM – going home on yer own with a kebab</i>', '#fff6b0'); player.hp = Math.min(100, player.hp + 15); toast('Consolation kebab (+15 health). Get back in and try again.'); }
+  else { callout('CHUCKED OUT!<i>Three pints spilt. The doormen have had a word.</i>', '#ff5a3b'); toast('Get back in and try again – mind the pints.'); }
+  hud();
+}
+function clubWin() {
+  NEX.st = 'won'; NEX.snogging = false; H.clock.style.display = 'none'; const left = Math.max(0, Math.ceil(120 - NEX.clock)); score += 2000; player.hp = 100; hud(); STORE.set('ph-pulled', 1);
+  callout(`PULLED!<i>Snogged at ${clubClockTxt()} with ${left} min to spare · +2000</i>`, '#ff4fd8'); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => ctone(f, .25, 'square', .1), i * 130));
+  say(NEX.girl, pick(['Yer a rubbish kisser. Taxi?', 'Get us a kebab, then.', 'Don\'t tell me mam.']));
+  for (const m of NEX.men) { m.wait = 99; m.c.ctl.loop('Cheer'); if (Math.random() < .5) say(m, pick(['Go on, lad!', 'Get in!', 'Wahey!', 'Jammy get!'])); }
+  radio(['BRIAN THONG', 'He\'s pulled in Nexus! At ten to two! Biggest scoop this paper\'s had all year. Full health, fettler.'], 1.5); toast('+2000 points · full health');
+}
+function clubUse() {
+  const G = NEX.girl;
+  if (NEX.st === 'won') { say(G, pick(['See yer in the taxi queue, love.', 'Get us a kebab on the way.'])); return; }
+  if (NEX.st !== 'run' || NEX.snogging) return;
+  if (NEX.clock < 110) { say(G, pick(['Not til the slowies come on, love.', 'Ask me at ten to two.', 'Yer keen, aren\'t yer? Ten to two.', 'Fuck off til the slow ones, will yer?'])); return; }
+  NEX.snogging = true; NEX.snog = 0; NEX.hearts = -1; say(G, pick(['Go on then, quick, before the lights come on!', 'Took yer long enough!', 'Yer not from Wigan, are yer? Go on then.']));
+}
+function updateClub(dt, rdt) {
+  if (!NEX || !NEX.grp) return;
+  if (!clubHint && player.pos.z < NEX.doorZ + 22) { clubHint = true; radio(['BRIAN THONG', 'Nexus is on your left. Slowies come on at ten to two – get in, don\'t spill a pint, and pull before the lights come up.']); }
+  const near = Math.abs(player.pos.z - NEX.doorZ) < 34; NEX.grp.visible = near; if (!near) return;
+  const was = player.inClub; player.inClub = -player.pos.x > NEX.x0 - .2;
+  if (player.inClub && !was) clubEnter(); else if (!player.inClub && was) clubLeave();
+  const t = performance.now() / 1000, D = NEX.df, late = NEX.st === 'run' && NEX.clock >= 110;
+  const beat = Math.floor(t * (late ? 1 : 2.13)); if (beat !== NEX.beat) { NEX.beat = beat; NEX.floor.material.map = NEX.tiles[beat & 1]; }
+  NEX.ball.rotation.y = t * .8; NEX.spots.forEach((s, i) => { const a = t * (late ? .5 : 1.4) + i * 1.05; s.position.set(-D.x + Math.cos(a) * (1.6 + i % 3), .3 + (i % 2) * 2.7, D.z + Math.sin(a * 1.3) * (1.6 + i % 2)); });
+  const G = NEX.girl; G.c.ctl.update(dt); bubbleTick(G, dt);
+  const gd = Math.hypot(player.pos.x - G.g.position.x, player.pos.z - G.g.position.z);
+  if (NEX.snogging || gd < 3.2 || NEX.st === 'won') G.g.rotation.y = Math.atan2(player.pos.x - G.g.position.x, player.pos.z - G.g.position.z);
+  else { NEX.ga += dt * .45; G.g.position.set(-D.x + Math.cos(NEX.ga) * 1.7, 0, D.z + Math.sin(NEX.ga * 1.4) * 1.7); G.g.rotation.y = NEX.ga * 2; }
+  for (const m of NEX.men) {
+    m.c.ctl.update(dt); bubbleTick(m, dt); if (NEX.st === 'won') continue; const p = m.g.position;
+    if (m.wait > 0) { m.wait -= dt; if (m.wait <= 0) m.c.ctl.loop('Walking_A', late ? 1.3 : 1); }
+    else { const dx = m.tx - p.x, dz = m.tz - p.z, d = Math.hypot(dx, dz), sp = (late ? 1.8 : 1.3) * m.spd;
+      if (d < .2) { m.wait = rand(.3, 1.8); m.c.ctl.loop('Unarmed_Idle'); clubWaypoint(m, late); }
+      else { p.x += dx / d * sp * dt; p.z += dz / d * sp * dt; m.g.rotation.y = Math.atan2(dx, dz); } }
+    if (!player.inClub) continue; const pd = Math.hypot(player.pos.x - p.x, player.pos.z - p.z);
+    if (NEX.st === 'run' && NEX.spillT <= 0 && pd < .85) clubSpill(m); else if (pd < 2.4 && m.sayT <= 0 && Math.random() < dt * .35) say(m, pick(CLUB_MUTTER));
+  }
+  let target = null;
+  if (player.inClub) {
+    stats.start += rdt * 1000; NEX.spillT -= dt;
+    if (NEX.st === 'run') {
+      const before = NEX.clock; NEX.clock += dt / 4.5; H.clock.textContent = clubClockTxt();
+      const fin = NEX.clock >= 117; H.clock.className = fin ? 'final' : NEX.clock >= 110 ? 'late' : '';
+      if (before < 110 && NEX.clock >= 110) { banner('1:50 – THE SLOWIES ARE ON', 'Get to her on the dance floor and go in for the snog. Lights up at 2:00.'); say(G, 'Ooh, I love this one!'); }
+      clubTick -= rdt; if (clubTick <= 0) { clubTick = fin ? .25 : late ? .5 : 1; ctone(fin ? 1500 : 1100, .03, 'square', fin ? .09 : .05); if (fin && (clubBeat = (clubBeat + 1) % 3) === 0) { ctone(58, .14, 'sine', .5, 40); setTimeout(() => ctone(52, .16, 'sine', .4, 36), 160); } }
+      if (late) { clubSlow -= rdt; if (clubSlow <= 0) { clubSlow = 1.15; NEX.bar = ((NEX.bar || 0) + 1) % 4; [[262, 330, 392], [220, 262, 330], [175, 220, 262], [196, 247, 294]][NEX.bar].forEach(f => ctone(f, 1.1, 'triangle', .045)); } }
+      if (NEX.snogging) {
+        if (gd > 2.1) { NEX.snogging = false; NEX.snog = 0; say(G, pick(['Where yer going?!', 'Oi! Come back!'])); }
+        else { NEX.snog += dt; target = T_BUSY; const n = Math.min(5, Math.floor(NEX.snog / .8)); if (n !== NEX.hearts) { NEX.hearts = n; H.use.innerHTML = '♥'.repeat(n) + '♡'.repeat(5 - n) + ' Snogging… hold still'; ctone(440 + n * 110, .12, 'sine', .12); } if (NEX.snog >= 4) clubWin(); } }
+      else if (gd < 1.9) target = late ? T_SNOG : T_EARLY;
+      if (NEX.st === 'run' && NEX.clock >= 120) clubChuck('time');
+    } else if (NEX.st === 'won' && gd < 1.9) target = T_WON;
+  }
+  NEX.target = target;
+}
+function addLucky() {
+  if (!ARC || ARC.npc) return;
+  const c = makeCharacter('attendant'); c.root.position.copy(ARC.kiosk); c.root.rotation.y = 0; scene.add(c.root); c.ctl.loop('Unarmed_Idle');
+  ARC.npc = { g: c.root, c, T: { bubbleY: 2.75 }, scale: c.scale, bubble: null, sayT: 0, name: 'LUCKY' };
+  const tag = textSprite('LUCKY', '#12061e', '#ffe14f'); tag.scale.multiplyScalar(.6 / c.scale); tag.position.set(0, 2.45, 0); c.root.add(tag);
+}
+function updateArcade(dt, rdt) {
+  if (!ARC) return;
+  const was = player.inLucky; player.inLucky = player.pos.x > ARC.x0 - .2; player.inArcade = player.inLucky || !!player.inClub;
+  if (!arcHint && player.pos.z < ARC.z0 + 22) { arcHint = true; radio(['BRIAN THONG', 'Lucky Strike\'s still open, on your right. Go and have a go on the bandits – they can\'t follow you in.']); }
+  if (player.inLucky && !was) { if (!arcWelcome) { arcWelcome = true; banner('LUCKY STRIKE AMUSEMENTS', 'Walk up to a machine to play. No pies on the carpet.'); } if (ARC.npc) say(ARC.npc, pick(['Alrite, fettler!', 'Come in, come in!', 'Wipe yer feet!'])); drawBoard(); }
+  if (player.inLucky) {
+    stats.start += rdt * 1000;                                         // the clock stops while you're in the arcade
+    arcT -= rdt; if (arcT <= 0) { arcT = rand(.25, .9); if (AC) tone(pick([523, 659, 784, 988, 1047, 1319]), .07, pick(['square', 'triangle']), .025); }
+    const n = ARC.npc; if (n) { n.c.ctl.update(dt); n.g.rotation.y = Math.atan2(player.pos.x - n.g.position.x, player.pos.z - n.g.position.z);
+      if (n.sayT > 0) { n.sayT -= dt; if (n.sayT <= 0 && n.bubble) { n.g.remove(n.bubble); n.bubble = null; } } else if (Math.random() < dt * .12) say(n, pick(LUCKY_LINES)); }
+  }
+  // what are you stood in front of?
+  let best = null, bd = 1.7;
+  if (player.inLucky) for (const m of ARC.machines) { const d = Math.hypot(m.x - player.pos.x, m.z - player.pos.z); if (d < bd) { bd = d; best = m; } }
+  if (player.inClub && NEX && NEX.target) best = NEX.target;
+  if (best !== useTarget) { useTarget = best; H.use.style.display = best ? 'block' : 'none'; document.body.classList.toggle('canuse', !!best);
+    if (best) H.use.innerHTML = `<kbd>${TOUCH ? 'USE' : 'E'}</kbd> ${best.kind === 'club' ? best.label : best.kind === 'game' ? 'Play ' + best.label : best.kind === 'npc' ? 'Talk to Lucky' : best.kind === 'pusher' ? 'Nudge the 2p falls' : 'Have a go on ' + best.label}`; }
+}
+function useMachine() {
+  const m = useTarget; if (!m || state.mode !== 'play') return;
+  if (m.kind === 'club') { clubUse(); return; }
+  if (m.kind === 'npc') { const n = ARC.npc; if (!n) return;
+    if (!ARC.brew) { ARC.brew = true; player.hp = Math.min(100, player.hp + 40); hud(); SFX.pickup(); say(n, 'Have a brew on the house. You look bortered.'); toast('Cuppa off Lucky (+40 health)'); } else say(n, pick(LUCKY_LINES)); return; }
+  if (m.kind === 'pusher') { if (ARC.nudge > t) return; ARC.nudge = t + 2.5; noise(.12, 300, 'lowpass', .3, 120);
+    if (Math.random() < .3) { score += 40; hud(); for (let i = 0; i < 5; i++) setTimeout(() => tone(1800 + i * 120, .05, 'square', .06), i * 70); toast('Clatter! 20 two-pences drop. +40 points'); }
+    else { toast(pick(['Nowt. It\'s on a slant.', 'One coin wobbles. It does not fall.', 'ALARM! Lucky gives you a look.'])); if (Math.random() < .3 && ARC.npc) say(ARC.npc, 'Oi! No nudging!'); } return; }
+  state.mode = 'cabinet'; mouseDown = false; CAB.open = m; CAB.t0 = performance.now(); for (const k in keys) keys[k] = false;
+  H.hudWrap.style.display = 'none'; document.body.classList.remove('playing'); document.exitPointerLock && document.exitPointerLock();
+  if (musicGain) musicGain.gain.value = 0; if (clubGain) clubGain.gain.value = 0; if (rainGain) rainGain.gain.value = 0;
+  CAB.el.hidden = false;
+  if (m.kind === 'game') { CAB.name.textContent = m.label; CAB.mach.hidden = true; CAB.frame.hidden = false; CAB.frame.src = m.url + '?embed=1'; CAB.frame.onload = () => { try { CAB.frame.contentWindow.focus(); } catch (e) {} }; }
+  else { CAB.frame.hidden = true; CAB.mach.hidden = false; CAB.name.textContent = m.kind === 'slots' ? 'Lucky Strike fruit machine' : 'The Grabber'; machineSetup(m.kind); }
+}
+function leaveMachine() {
+  if (state.mode !== 'cabinet') return;
+  if (CAB.open.kind === 'game') { CAB.frame.src = 'about:blank'; STORE.set('ph-arcplays', STORE.get('ph-arcplays', 0) + 1); }
+  CAB.el.hidden = true; CAB.open = null; CAB.busy = false; stats.start += performance.now() - CAB.t0;
+  state.mode = 'play'; overlay(null); hud(); drawBoard();
+  if (!TOUCH) { toast('Click to look around again'); canvas.requestPointerLock && canvas.requestPointerLock(); }
+}
+$('ph-cabx').addEventListener('click', leaveMachine);
+window.addEventListener('message', (e) => { if (e.data === 'shcn-exit') leaveMachine(); });
+document.addEventListener('keydown', (e) => {
+  if (state.mode === 'play' && e.code === 'KeyE') useMachine();
+  else if (state.mode === 'cabinet') { if (e.code === 'Escape') leaveMachine(); else if ((e.code === 'Space' || e.code === 'Enter') && CAB.open && CAB.open.kind !== 'game') { e.preventDefault(); CAB.mGo.click(); } }
+});
+// ---- fruit machine and grabber
+const REEL = ['🥧', '🟢', '🥯', '🧱', '🍺', '7️⃣'], REEL_W = [5, 5, 4, 3, 2, 1];
+const PAY = { '🥧': ['Three pies! +12 pies', () => { player.ammo[0] = Math.min(30, player.ammo[0] + 12); }], '🟢': ['Three mushy peas! +14 tubs', () => { player.ammo[1] = Math.min(36, player.ammo[1] + 14); }],
+  '🥯': ['Three barm cakes! +2 grenades', () => { player.grenades = Math.min(5, player.grenades + 2); }], '🧱': ['Three aarf-knackers! +4 bricks', () => { player.ammo[2] = Math.min(9, player.ammo[2] + 4); }],
+  '🍺': ['BULL BITTER! Double damage for 30 seconds', () => { player.buffT = 30; }], '7️⃣': ['★ JACKPOT! ★ +2500 points and full health', () => { score += 2500; player.hp = 100; }] };
+function spinSym() { let r = Math.random() * 20; for (let i = 0; i < REEL.length; i++) { r -= REEL_W[i]; if (r < 0) return REEL[i]; } return REEL[0]; }
+function machineSetup(kind) {
+  CAB.mTitle.textContent = kind === 'slots' ? 'LUCKY STRIKE' : 'THE GRABBER';
+  if (kind === 'slots') { CAB.mShow.innerHTML = '<span>🥧</span><span>7️⃣</span><span>🍺</span>'; CAB.mShow.className = 'reels'; CAB.mMsg.textContent = `Three of a kind wins supplies. 777 is the jackpot. You have ${score} points.`; CAB.mGo.textContent = score >= 100 ? 'SPIN · 100 points' : 'SPIN · on the house'; }
+  else { CAB.mShow.innerHTML = '<span>🪝</span>'; CAB.mShow.className = 'reels claw'; CAB.mMsg.textContent = `150 points a go. There is definitely a prize in there. You have ${score} points.`; CAB.mGo.textContent = score >= 150 ? 'GRAB · 150 points' : 'GRAB · on the house'; }
+}
+CAB.mGo.addEventListener('click', () => {
+  if (CAB.busy || !CAB.open) return; const kind = CAB.open.kind; CAB.busy = true;
+  if (kind === 'slots') {
+    score = Math.max(0, score - 100); const res = [spinSym(), spinSym(), spinSym()]; if (!ARC.spins) { ARC.spins = 0; } ARC.spins++;
+    if (ARC.spins % 6 === 0 && !(res[0] === res[1] && res[1] === res[2])) res[1] = res[2] = res[0];            // it pays out now and then, like a real one
+    const cells = CAB.mShow.children; let n = 0;
+    const iv = setInterval(() => { n++; for (let i = 0; i < 3; i++) if (n < 8 + i * 6) cells[i].textContent = pick(REEL); else cells[i].textContent = res[i]; tone(300 + (n % 5) * 60, .03, 'square', .04);
+      if (n >= 22) { clearInterval(iv); CAB.busy = false;
+        if (res[0] === res[1] && res[1] === res[2]) { PAY[res[0]][1](); CAB.mMsg.textContent = PAY[res[0]][0]; STORE.set('ph-arcwins', STORE.get('ph-arcwins', 0) + 1); for (let i = 0; i < 8; i++) setTimeout(() => tone(700 + i * 110, .09, 'square', .09), i * 80); }
+        else if (res[0] === res[1] || res[1] === res[2] || res[0] === res[2]) { score += 60; CAB.mMsg.textContent = 'Two of a kind. 60 points back. So close.'; tone(660, .12, 'square', .07); }
+        else { CAB.mMsg.textContent = pick(['Nowt. Unlucky Strike.', 'Nothing. It\'s due a payout, this one.', 'Not a sausage.', 'Lucky says it paid out yesterday.']); tone(180, .2, 'sawtooth', .07); }
+        CAB.mMsg.textContent += `  (${score} points)`; CAB.mGo.textContent = score >= 100 ? 'SPIN · 100 points' : 'SPIN · on the house'; hud(); } }, 70);
+  } else {
+    score = Math.max(0, score - 150); const cell = CAB.mShow.children[0]; let n = 0; CAB.mMsg.textContent = 'The claw descends…';
+    const iv = setInterval(() => { n++; cell.style.transform = `translate(${Math.sin(n * .5) * 40}px, ${n < 14 ? n * 4 : (28 - n) * 4}px)`; tone(200 + n * 12, .03, 'triangle', .04);
+      if (n >= 28) { clearInterval(iv); CAB.busy = false; cell.style.transform = '';
+        if (Math.random() < .55) { const k = pick(['tea', 'pies', 'peas', 'barm', 'brick', 'brick', 'bull', 'lobby']); PICK[k].apply(); CAB.mMsg.textContent = 'The claw holds! You win: ' + PICK[k].label; STORE.set('ph-arcwins', STORE.get('ph-arcwins', 0) + 1); SFX.pickup(); }
+        else { CAB.mMsg.textContent = pick(['It dropped it. It always drops it.', 'The claw has the grip of a wet lettuce.', 'It picked it up, looked at you, and let go.']); tone(180, .2, 'sawtooth', .07); }
+        CAB.mMsg.textContent += `  (${score} points)`; CAB.mGo.textContent = score >= 150 ? 'GRAB · 150 points' : 'GRAB · on the house'; hud(); } }, 70);
+  }
+});
+
 // ---------------------------------------------------------------- game state
 const state = { mode: 'title', enc: -1, cleared: -1, checkpoint: 0, won: false };
 const CHECKPOINTS = [0, -58, -103, -148, -188];
@@ -1591,7 +1930,7 @@ function resetRun() {
   barrierObjs.forEach((b) => { b.visible = true; b.position.y = 0; });
   state.enc = -1; state.cleared = -1; state.checkpoint = 0; coachSpawn = false; state.won = false; taxiArrive = null;
   player.pos.set(0, 0, 0); player.vel.set(0, 0, 0); player.yaw = 0; player.pitch = 0; player.hp = 100; player.alive = true;
-  player.ammo = [14, 18, 0]; player.grenades = 2; player.buffT = 0; combo.n = 0; combo.t = 0; combo.best = 0; stats.heads = 0; scoopsFound.length = 0; scoops.forEach((sc) => { sc.g.visible = true; }); radioQ.length = 0; lowWarned = false; player.weapon = 1; setWeapon(0);
+  player.ammo = [14, 18, 0]; player.grenades = 2; player.inArcade = false; player.inLucky = false; player.inClub = false; if (NEX) { NEX.st = 'idle'; NEX.tries = 0; NEX.snogging = false; H.clock.style.display = 'none'; for (const m of NEX.men) m.wait = .5; } if (ARC) { ARC.brew = false; ARC.spins = 0; } player.buffT = 0; combo.n = 0; combo.t = 0; combo.best = 0; stats.heads = 0; scoopsFound.length = 0; scoops.forEach((sc) => { sc.g.visible = true; }); radioQ.length = 0; lowWarned = false; player.weapon = 1; setWeapon(0);
   score = 0; Object.assign(stats, { shots: 0, hits: 0, kos: 0, dmg: 0, taken: 0, start: performance.now(), time: 0 });
   H.boss.style.display = 'none'; hud();
 }
@@ -1649,7 +1988,7 @@ if (TOUCH) $('ph-start').textContent = 'Tap to play';
 const startBtn = $('ph-start'), startLabel = startBtn.textContent;
 startBtn.disabled = true; startBtn.textContent = 'Loading the lads… 0%';
 loadCharacters((f) => { startBtn.textContent = `Loading the lads… ${Math.round(f * 100)}%`; })
-  .then(() => { startBtn.disabled = false; startBtn.textContent = startLabel; })
+  .then(() => { startBtn.disabled = false; startBtn.textContent = startLabel; addLucky(); addClub(); })
   .catch((err) => { console.error(err); startBtn.textContent = 'Could not load the characters – refresh to try again'; });
 startBtn.addEventListener('click', start);
 $('ph-resume').addEventListener('click', start);
@@ -1677,6 +2016,16 @@ else $('ph-soon').textContent = 'That\'s the lot – you\'ve completed PIE HARD.
 
 // ---------------------------------------------------------------- update
 function collide(pos, r) {
+  for (const R of [ARC, NEX]) { if (!R) continue; const s = R.s || 1; let px = pos.x * s;
+    if (!(px > STREET_HALF - r && Math.abs(pos.z - R.doorZ) < 12 && (px >= R.x0 - .35 || Math.abs(pos.z - R.doorZ) < 1.25 - r))) continue;
+    if (px > R.x0 + r - .05) { px = Math.min(px, R.x1 - r); pos.z = clamp(pos.z, R.z1 + r, R.z0 - r); }                                         // on the floor inside
+    else if (Math.abs(pos.z - R.doorZ) < 1.25 - r + .12) pos.z = clamp(pos.z, R.doorZ - 1.25 + r, R.doorZ + 1.25 - r);                          // in the doorway
+    else px = R.x0 + r - .05;                                                                                                                    // up against the front wall, inside
+    pos.x = px * s;
+    for (const c of colliders) { const cx = clamp(pos.x, c.minX, c.maxX), cz = clamp(pos.z, c.minZ, c.maxZ), dx = pos.x - cx, dz = pos.z - cz, d2 = dx * dx + dz * dz;
+      if (d2 < r * r && d2 > 1e-6) { const d = Math.sqrt(d2); pos.x = cx + dx / d * r; pos.z = cz + dz / d * r; } }
+    return;
+  }
   pos.x = clamp(pos.x, -STREET_HALF + r, STREET_HALF - r);
   const barrierZ = state.cleared + 1 < BARRIERS.length ? BARRIERS[state.cleared + 1] : END_Z;
   pos.z = clamp(pos.z, Math.max(END_Z + r + .5, barrierZ + r), START_Z - r);
@@ -1752,7 +2101,8 @@ function updateEnemies(dt, t) {
     if (dist < 40) C.ctl.update(dt);
     // attack
     e.cd -= dt;
-    if (e.cd <= 0 && dist < (e.T.melee ? far + .6 : 26)) {
+    if (player.inArcade) { if (e.cd <= 0) { e.cd = rand(2, 4); if (dist < 24 && Math.random() < .5) say(e, pick(['Come out, yer soft melt!', 'You can\'t stay in there all night!', 'We\'ll wait!', 'Get out here!'])); } }
+    else if (e.cd <= 0 && dist < (e.T.melee ? far + .6 : 26)) {
       e.cd = rand(e.T.cd[0], e.T.cd[1]) * EASY.cd / (e.rage || 1);
       if (e.T.melee) { if (dist < far + .6) { C.ctl.once(Math.random() < .7 ? 'Unarmed_Melee_Attack_Punch_A' : 'Unarmed_Melee_Attack_Kick', 1.4); if (e.T.sfx) SFX[e.T.sfx](e.T.boss); hurtPlayer(e.T.dmg, pick(e.T.meleeLines || ['Bouncer gave you a slap!', 'Thrown out!', 'Headlocked!']), g.position); } }
       else if (e.T.mixed || e.type === 'hen' || e.type === 'bride') { if (dist < 2.2) { C.ctl.once('Unarmed_Melee_Attack_Punch_A', 1.5); hurtPlayer(e.T.dmg, pick(e.T.meleeLines || ['Handbagged!']), g.position); } else enemyThrow(e); }
@@ -1793,7 +2143,7 @@ function updateShots(dt) {
     const s = eshots[i]; s.t -= dt; s.v.y -= s.g * dt; s.m.position.addScaledVector(s.v, dt); s.m.rotation.x += dt * 10;
     const p = s.m.position, dx = p.x - eye.x, dz = p.z - eye.z;
     let gone = s.t <= 0 || p.y <= .05;
-    if (!gone && dx * dx + dz * dz < .42 && p.y > player.pos.y + .2 && p.y < eye.y + .3) { hurtPlayer(s.dmg, pick(PROJ[s.kind].hit), p.clone().addScaledVector(s.v, -1)); gone = true; }
+    if (!gone && !player.inArcade && dx * dx + dz * dz < .42 && p.y > player.pos.y + .2 && p.y < eye.y + .3) { hurtPlayer(s.dmg, pick(PROJ[s.kind].hit), p.clone().addScaledVector(s.v, -1)); gone = true; }
     if (gone) { burst(p, PROJ[s.kind].burst, 6, 2); scene.remove(s.m); eshots.splice(i, 1); }
   }
   for (let i = fx.length - 1; i >= 0; i--) { const f = fx[i]; f.t -= dt; f.v.y -= 12 * dt; f.m.position.addScaledVector(f.v, dt); if (f.m.position.y < .03) { f.m.position.y = .03; f.v.multiplyScalar(.4); } if (f.t <= 0) { scene.remove(f.m); fx.splice(i, 1); } }
@@ -1831,7 +2181,7 @@ function frame() {
   const rdt = Math.min(.05, clock.getDelta()); if (slowT > 0) slowT -= rdt;
   const dt = rdt * (slowT > 0 ? .28 : 1); t += dt; lastDt = dt;
   if (state.mode === 'play') {
-    updatePlayer(dt); updateEnemies(dt, t); updateShots(dt); updateEncounters(); updateTraffic(dt); updateScoops(rdt); updateRadio(rdt); updateBuff(dt); ambience(rdt);
+    updatePlayer(dt); updateEnemies(dt, t); updateShots(dt); updateEncounters(); updateTraffic(dt); updateScoops(rdt); updateRadio(rdt); updateBuff(dt); ambience(rdt); updateClub(dt, rdt); updateArcade(dt, rdt);
     if (combo.t > 0) { combo.t -= dt; if (combo.t <= 0) { combo.n = 0; H.combo.style.opacity = 0; } }
     if (state.mode === 'play') stats.time = (performance.now() - stats.start) / 1000;
   } else if (state.mode === 'dead' || state.mode === 'won') {
@@ -1852,7 +2202,7 @@ function frame() {
   // weather: showers come and go; sound and rain fade together
   weather.t -= dt; if (weather.t <= 0) { weather.on = RAINY && !weather.on; weather.t = weather.on ? rand(15, 25) : rand(35, 55); }
   weather.wet = clamp(weather.wet + (weather.on ? 1 : -1) * dt * .5, 0, 1);
-  rain.visible = weather.wet > .01; rain.material.opacity = .55 * weather.wet;
+  rain.visible = weather.wet > .01 && !player.inArcade; rain.material.opacity = .55 * weather.wet;
   if (rainGain) rainGain.gain.value = rain.visible ? .07 * weather.wet : 0;
   // rain follows the player
   const rp = rainGeo.attributes.position.array;
@@ -1869,7 +2219,7 @@ function frame() {
   for (const p of pickups) { p.t += dt; p.g.rotation.y += dt * 1.6; p.g.position.y = .6 + Math.sin(p.t * 2) * .08;
     if (state.mode === 'play' && p.g.visible && p.g.position.distanceTo(new THREE.Vector3(player.pos.x, .6, player.pos.z)) < 1.2) { PICK[p.kind].apply(); p.g.visible = false; SFX.pickup(); toast(PICK[p.kind].label); hud(); } }
   // club music volume by distance to NITECLUB
-  if (clubGain) clubGain.gain.value = LEVEL_N === 1 && (state.mode === 'play' || state.mode === 'title') ? clamp(1 - Math.abs(player.pos.z + 76) / 40, 0, 1) * .5 : 0;
+  if (clubGain) clubGain.gain.value = player.inClub && state.mode === 'play' ? (NEX.st === 'run' && NEX.clock >= 110 ? .08 : .8) : LEVEL_N === 1 && (state.mode === 'play' || state.mode === 'title') ? clamp(1 - Math.abs(player.pos.z + 76) / 40, 0, 1) * .5 : 0;
   music();
   if (skyGroup) skyGroup.position.set(camera.position.x, 0, camera.position.z);
   if (dirT > 0) { dirT -= rdt; if (dirT <= 0) H.dir.style.opacity = 0; }
@@ -1895,4 +2245,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 hud(); overlay('title'); frame();
-window.__ph = { combo, scoops, scoopsFound, elite, radioQ, get slow() { return slowT; }, state, player, enemies, start, ENCOUNTERS, fire, throwGrenade, setWeapon, stats, damageEnemy, get score() { return score; }, weather, get taxi() { return taxiArrive; }, exitAt: LV.exit.at, cars, renderer, scene, fx, decals };
+window.__ph = { get ARC() { return ARC; }, get NEX() { return NEX; }, clubUse, useMachine, leaveMachine, CAB, combo, scoops, scoopsFound, elite, radioQ, get slow() { return slowT; }, state, player, enemies, start, ENCOUNTERS, fire, throwGrenade, setWeapon, stats, damageEnemy, get score() { return score; }, weather, get taxi() { return taxiArrive; }, exitAt: LV.exit.at, cars, renderer, scene, fx, decals };

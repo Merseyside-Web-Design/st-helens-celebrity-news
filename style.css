@@ -187,3 +187,10 @@ footer.site p{margin:4px 0}
 .gamecard.featured .gc-body h2 a{color:var(--orange);font-size:26px}
 .gamecard.featured .shot img{aspect-ratio:16/9}
 .gamecard.featured .gc-body p{font-size:14px}
+
+/* embed mode: just the game, for the Lucky Strike cabinets inside PIE HARD */
+html.embed,html.embed body{margin:0;height:100%;background:#100822}
+html.embed body{display:flex;align-items:center;justify-content:center}
+html.embed .pi-stage{margin:0;padding:8px;width:100%;height:100%;box-sizing:border-box;justify-content:center}
+html.embed #pi-canvas,html.embed .pi-stage canvas{width:auto;max-width:100%;height:auto;max-height:calc(100% - 56px);flex:0 1 auto;min-height:0}
+@media (hover:none) and (orientation:landscape){html.embed .pi-stage{flex-direction:row;flex-wrap:wrap;align-content:center;gap:8px 14px}html.embed #pi-canvas,html.embed .pi-stage canvas{max-height:calc(100% - 8px);max-width:55%}html.embed .pi-pad{max-width:210px;flex-wrap:wrap}html.embed .dpad{max-width:190px}html.embed .fightpad{max-width:230px;flex-wrap:wrap}html.embed .pi-opts{flex-direction:column}}
