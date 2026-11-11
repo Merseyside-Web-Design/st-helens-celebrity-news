@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>PIE HARD: The Siege of Westfield Street – St Helens Celebrity News</title>
-<meta name="description" content="PIE HARD – a first-person food fight down Westfield Street, St Helens on a Saturday night. Pie launcher, mushy-pea shotgun, barm-cake grenades and the hen party from hell. An SHCN original.">
+<meta name="description" content="PIE HARD – a five-level first-person food fight across St Helens: Westfield Street, Parr, Taylor Park, the East Lancs and Crank Caverns. Pie launcher, mushy-pea shotgun, barm-cake grenades and 25 SHCN scoops to find. An SHCN original.">
 <link rel="canonical" href="https://sthelenscelebritynews.co.uk/pie-hard/">
 <meta property="og:title" content="PIE HARD: The Siege of Westfield Street">
 <meta property="og:description" content="Wigan have invaded St Helens. Fight your way down Westfield Street to the taxi rank armed only with food.">
@@ -103,6 +103,18 @@ body.touch #ph-canvas{cursor:default}
   #ph-banner b{font-size:22px}#ph-banner span{font-size:8px}#ph-boss{top:52px}#ph-bossname{font-size:8px}
   #ph-toast{bottom:auto;top:40%;font-size:9px}
 }
+#ph-dir{position:absolute;left:50%;top:50%;width:260px;height:260px;transform:translate(-50%,-50%);opacity:0;transition:opacity .3s}#ph-dir span{position:absolute;left:50%;top:0;width:90px;height:22px;margin-left:-45px;border-top:6px solid rgba(255,40,50,.9);border-radius:50%}
+@media (max-height:500px){#ph-dir{width:200px;height:200px}}
+#ph-call{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font:30px Bungee,Impact,sans-serif;text-shadow:3px 3px 0 #000;opacity:0;transition:opacity .25s,transform .12s;white-space:nowrap;text-align:center}
+#ph-call i{display:block;font:9px "Press Start 2P",monospace;color:#fff;font-style:normal;margin-top:4px}
+#ph-combo{position:absolute;right:24px;top:42%;text-align:right;font:9px "Press Start 2P",monospace;color:#fff;text-shadow:2px 2px 0 #000;opacity:0;transition:opacity .3s}
+#ph-combo b{display:block;font:26px Bungee,Impact,sans-serif;color:#39ff14}
+#ph-radio{position:absolute;left:24px;bottom:84px;max-width:min(420px,46vw);background:rgba(16,8,34,.82);border-left:4px solid var(--purple);padding:8px 12px;font:12px/1.5 Verdana,sans-serif;opacity:0;transition:opacity .4s}
+#ph-radio b{display:block;font:9px "Press Start 2P",monospace;color:var(--orange);margin-bottom:4px}
+#ph-buff{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);font:10px "Press Start 2P",monospace;color:#ff6a3b;text-shadow:2px 2px 0 #000}
+#ph-film{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.5));pointer-events:none}
+#ph-scoops{margin:10px 0;font-size:12px;text-align:center}#ph-scoops b{display:block;margin-bottom:6px;color:var(--orange)}#ph-scoops a{display:block;padding:2px 0}
+@media (max-height:500px){#ph-call{font-size:20px;top:30%}#ph-combo{right:12px;top:30%}#ph-combo b{font-size:17px}#ph-radio{left:50%;transform:translateX(-50%);bottom:auto;top:58px;font-size:10px;padding:5px 9px;max-width:44vw}#ph-buff{bottom:auto;top:26%;font-size:8px}}
 .back{position:fixed;left:12px;top:10px;z-index:11;font:10px "Press Start 2P",monospace;background:rgba(0,0,0,.5);padding:8px 10px;text-decoration:none}
 </style>
 </head>
@@ -118,6 +130,7 @@ body.touch #ph-canvas{cursor:default}
   <div id="ph-boss"><div id="ph-bossname">THE HEN PARTY</div><div class="bar"><div id="ph-bossbar"></div></div></div>
   <div id="ph-banner"></div>
   <div id="ph-toast"></div>
+  <div id="ph-dir"><span></span></div><div id="ph-call"></div><div id="ph-combo"></div><div id="ph-radio"></div><div id="ph-buff"></div><div id="ph-film"></div>
   <div class="hp"><div class="lbl">HEALTH</div><div class="bar"><div id="ph-hp"></div><span id="ph-hptxt">100</span></div></div>
   <div class="wp"><div id="ph-weap">PIE LAUNCHER</div><div id="ph-ammo">14 PIES</div><div id="ph-gren">BARM CAKES × 2</div></div>
 </div>
@@ -144,13 +157,13 @@ body.touch #ph-canvas{cursor:default}
     <div class="mobile-only">
       <div class="cols">
         <div class="box"><h3>MOVE</h3><ul><li>Left thumb anywhere – walk</li><li>Push it all the way – leg it</li><li>JUMP button</li></ul></div>
-        <div class="box"><h3>FIGHT</h3><ul><li>Right thumb – look and aim</li><li>FIRE – hold to keep firing</li><li>SWAP – pies / mushy peas</li><li>BARM – barm-cake grenade</li></ul></div>
+        <div class="box"><h3>FIGHT</h3><ul><li>Right thumb – look and aim</li><li>FIRE – hold to keep firing</li><li>SWAP – pies / peas / bricks</li><li>Head shots do double</li><li>BARM – barm-cake grenade</li></ul></div>
       </div>
     </div>
     <div class="desktop-only">
       <div class="cols">
         <div class="box"><h3>MOVE</h3><ul><li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk</li><li><kbd>Shift</kbd> leg it</li><li><kbd>Space</kbd> jump</li><li>Mouse to look</li></ul></div>
-        <div class="box"><h3>FIGHT</h3><ul><li>Left click – fire</li><li><kbd>1</kbd> Pie launcher</li><li><kbd>2</kbd> Mushy-pea shotgun</li><li><kbd>G</kbd> / right click – barm-cake grenade</li><li><kbd>Esc</kbd> pause</li></ul></div>
+        <div class="box"><h3>FIGHT</h3><ul><li>Left click – fire</li><li><kbd>1</kbd> Pie launcher</li><li><kbd>2</kbd> Mushy-pea shotgun</li><li><kbd>3</kbd> Aarf-knackers (bricks, when you find some)</li><li>Head shots do double</li><li><kbd>G</kbd> / right click – barm-cake grenade</li><li><kbd>Esc</kbd> pause</li></ul></div>
       </div>
     </div>
       <button class="btn" id="ph-start" type="button">Click to play</button>
@@ -167,6 +180,7 @@ body.touch #ph-canvas{cursor:default}
       <label for="ph-sens">MOUSE</label><input id="ph-sens" type="range" min="0.3" max="2.5" step="0.05">
       <label for="ph-vol">VOLUME</label><input id="ph-vol" type="range" min="0" max="1" step="0.05">
     </div>
+    <p class="small" style="margin:0 0 12px">Not from round here? <a href="../dictionary.html" target="_blank" rel="noopener">The SHCN Tellins dictionary</a> explains what they're shouting at you.</p>
     <button class="btn" id="ph-resume" type="button">Carry on</button>
     <button class="btn alt" id="ph-restart" type="button">Start again from the kebab shop</button>
     <p class="small"><a href="../arcade.html">Quit to the Arcade</a></p>
@@ -185,6 +199,7 @@ body.touch #ph-canvas{cursor:default}
   <div class="card">
     <h1 style="color:#39ff14">YOU SURVIVED<small>Saturday night on Westfield Street</small></h1>
     <p style="text-align:center" id="ph-won-text"></p>
+    <div id="ph-scoops"></div>
     <div id="ph-rank"></div>
     <div class="stats" id="ph-win-stats"></div>
     <button class="btn" id="ph-next" type="button" hidden>Next level</button>

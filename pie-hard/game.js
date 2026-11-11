@@ -186,6 +186,22 @@ function coach(x, z) {
   for (const wz of [-3.8, 3.8]) for (const wx of [-1.3, 1.3]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .3, 12), PROPMAT.tyre); w.rotation.z = Math.PI / 2; w.position.set(wx, .5, wz); g.add(w); }
   g.position.set(x, 0, z); scene.add(g); addCollider(x, z, 2.8, 11.2); return g;
 }
+function newsBoard(x, z, headline, ry = 0) {
+  const tex = canvasTex(256, 384, (g, w, h) => { g.fillStyle = '#f4efe2'; g.fillRect(0, 0, w, h); g.fillStyle = '#6600ff'; g.fillRect(0, 0, w, 70); g.fillStyle = '#fda138'; g.font = 'bold 50px Arial Black, Arial'; g.textAlign = 'center'; g.fillText('SHCN', w / 2, 54);
+    g.fillStyle = '#111'; g.font = 'bold 34px Arial Black, Arial'; const words = headline.toUpperCase().split(' '); let line = '', y = 124;
+    for (const wd of words) { if (g.measureText(line + wd).width > w - 26 && line) { g.fillText(line.trim(), w / 2, y); y += 40; line = ''; } line += wd + ' '; } g.fillText(line.trim(), w / 2, y);
+    g.strokeStyle = '#111'; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, h - 6); });
+  const m = lam({ map: tex, emissive: 0xffffff, emissiveIntensity: .35 }); m.emissiveMap = tex;
+  const g = new THREE.Group();
+  for (const s of [-1, 1]) { const b = new THREE.Mesh(new THREE.PlaneGeometry(.62, .93), m); b.position.set(0, .5, s * .13); b.rotation.x = -s * .22; if (s < 0) b.rotation.y = Math.PI; g.add(b); }
+  g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g);
+}
+const BOARDS = { 1: ['Dog shit levels at all time high', 'St Helens men prefer pie and chips to sex', 'Winning Wigan DNA found in pie', 'Nexus to be midget haven', 'Student in pie shock horror probe'],
+  2: ['Parr - take a fresh look', 'Giant ants spotted on Burgies', 'It\'s all going off up Four Acre', 'Burgies olympic shocker'],
+  3: ['Dog shit levels at all time high', 'Have a go grandad in theft drama', 'Bummers Wood open for all'],
+  4: ['Scouse congestion charges', 'Lads be alert!', 'Sticky patch for St Helens industry'],
+  5: ['St Helens pits to re-open', 'Saddam in Laffak chippy shocker'] }[LEVEL_N];
+function placeBoards() { BOARDS.forEach((hl, i) => { const z = -10 - i * (LEVEL_N === 5 ? 9 : 42) - (LEVEL_N === 5 ? 0 : 0), sx = i % 2 ? -1 : 1; newsBoard(sx * (STREET_HALF - .9), LEVEL_N === 5 ? -3 - i * 9 : z, hl, sx * .5 + Math.PI / 2); }); }
 function buildStreet() {
   // Westfield Street as it really is: a narrow block-paved road lined with black bollards, wide red-brick pavements,
   // two/three-storey terraces in white render and red brick, roller shutters, the club, and the clock tower closing the view.
@@ -229,7 +245,7 @@ function buildStreet() {
   // terraces
   const RENDER = ['#e6e2d6', '#d9d4c4', '#efe9dc', '#cfc8b8', '#e8dccd'], BRICK = ['#7a3a2a', '#8a4632', '#6a3a2c', '#7e4430'];
   const slate = lam({ color: 0x34343e });
-  const SHOP_NAMES = ['KEBABS', 'CHIPPY', 'PAWN', 'VAPES', 'TATTOO', 'STYLING', 'BOOKIES', 'OFFIE', 'NAILS', 'PHONES', 'CHINESE', 'PIZZA', 'BARBER', 'CASH 4 GOLD', 'TANNING', 'KARAOKE', 'TO LET', 'BAR 44', 'THE BLOOD TUB', 'TAXIS'];
+  const SHOP_NAMES = ['KEBABS', 'SIN BIN', 'CHARCOAL GRILL', 'PAWN', 'THE GERARD', 'BULLION', 'BOOKIES', 'FORUM 44', 'LAFFAK CHIPPY', 'DALI BAR', 'TO LET', 'JAVA BAR', 'BAR X', 'PICKLES PLASTIC FORKS', 'THE ABBEY', 'CINDYS', 'EXCHANGE VAULTS', 'SPICY CHICKEN', 'TAXIS', 'TO LET'];
   const NEONS = ['#ff3b6b', '#ffb13b', '#7cff4f', '#39e0ff', '#ff4fd8', '#ffe14f', '#b06bff', '#ff6a3b'];
   let nameI = 0;
   const ATL = [0, 1].map(() => { const c = document.createElement('canvas'); c.width = c.height = 2048; const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
@@ -247,7 +263,7 @@ function buildStreet() {
       glass.emissiveMap = glass.map;
       const mats = [body, body, slate, body, body, body]; const b = new THREE.Mesh(new THREE.BoxGeometry(10, hgt, len), mats); b.position.set(sx * (FRONT + 5), hgt / 2, zc); scene.add(b);
       const gw = new THREE.Mesh(new THREE.PlaneGeometry(len * .55, 8), glass); gw.position.set(sx * (FRONT - .03), 8, zc + len * .2); gw.rotation.y = -sx * Math.PI / 2; scene.add(gw);
-      const sign = new THREE.Mesh(new THREE.PlaneGeometry(len - 1, 3.4), lam({ map: shopTex('THE PALACE', '#b06bff', 'lit'), emissive: 0xffffff, emissiveIntensity: .7 })); sign.material.emissiveMap = sign.material.map;
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(len - 1, 3.4), lam({ map: shopTex('NEXUS', '#b06bff', 'lit'), emissive: 0xffffff, emissiveIntensity: .7 })); sign.material.emissiveMap = sign.material.map;
       sign.position.set(sx * (FRONT - .03), 1.9, zc); sign.rotation.y = -sx * Math.PI / 2; scene.add(sign);
       const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.4, .15, 5), lam({ color: 0x1a1a22 })); canopy.position.set(sx * (FRONT - .7), 3.8, zc); scene.add(canopy);
       for (const dz of [-2, 2]) { const rope = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, 1, 6), lam({ color: 0xd8b84a })); rope.position.set(sx * (FRONT - 1.6), .5, zc + dz); scene.add(rope); }
@@ -836,7 +852,48 @@ function mergeStatic() {
     scene.add(new THREE.Mesh(geo, mat));
   }
 }
+// ================================================================ v2: sky, stars, moon and the St Helens skyline
+const SKY = { 1: ['#07051a', '#3a2450', '#b0603a', 1], 2: ['#060a1e', '#1c2a50', '#8a5a3a', 1], 3: ['#061018', '#14323a', '#2a6a6a', .8], 4: ['#0a0c22', '#3a3460', '#e08a5a', .6], 5: ['#141c34', '#5a5a80', '#ffb070', .35] }[LEVEL_N];
+let skyGroup = null;
+function buildSky() {
+  skyGroup = new THREE.Group();
+  const fogCol = '#' + scene.fog.color.getHexString();
+  const tex = canvasTex(16, 512, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, SKY[0]); gr.addColorStop(.3, SKY[0]); gr.addColorStop(.43, SKY[1]); gr.addColorStop(.488, SKY[2]); gr.addColorStop(.5, fogCol); gr.addColorStop(1, fogCol); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(240, 24, 16), new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, fog: false, depthWrite: false })); skyGroup.add(dome);
+  // stars
+  const N = 500, pos = new Float32Array(N * 3); for (let i = 0; i < N; i++) { const a = rand(0, Math.PI * 2), e = rand(.12, 1.5); pos.set([Math.cos(a) * Math.cos(e) * 230, Math.sin(e) * 230, Math.sin(a) * Math.cos(e) * 230], i * 3); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  skyGroup.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xdde4ff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: .75 * SKY[3], fog: false, depthWrite: false })));
+  // moon
+  const mt = canvasTex(128, 128, (g) => { const gr = g.createRadialGradient(64, 64, 10, 64, 64, 64); gr.addColorStop(0, 'rgba(255,250,230,1)'); gr.addColorStop(.28, 'rgba(255,250,230,1)'); gr.addColorStop(.34, 'rgba(200,210,255,.35)'); gr.addColorStop(1, 'rgba(200,210,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    g.fillStyle = 'rgba(180,180,170,.5)'; for (const [x, y, r] of [[54, 56, 5], [72, 66, 4], [62, 74, 3], [70, 52, 3]]) { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); } });
+  const moonS = new THREE.Sprite(new THREE.SpriteMaterial({ map: mt, transparent: true, fog: false, depthWrite: false, opacity: .5 + .5 * SKY[3] })); moonS.position.set(-70, 120, -180); moonS.scale.set(34, 34, 1); skyGroup.add(moonS);
+  // clouds lit orange from below by the street lights
+  const ct = canvasTex(256, 128, (g, w, h) => { for (let i = 0; i < 26; i++) { const x = rand(30, w - 30), y = rand(40, h - 30), r = rand(18, 40); const gr = g.createRadialGradient(x, y, 2, x, y, r); gr.addColorStop(0, 'rgba(255,255,255,.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); } });
+  for (let i = 0; i < 7; i++) { const c = new THREE.Sprite(new THREE.SpriteMaterial({ map: ct, transparent: true, fog: false, depthWrite: false, opacity: rand(.12, .3), color: new THREE.Color(SKY[2]).lerp(new THREE.Color(0x8890b0), .5) }));
+    const a = rand(0, Math.PI * 2); c.position.set(Math.cos(a) * 200, rand(45, 110), Math.sin(a) * 200); c.scale.set(rand(110, 190), rand(34, 60), 1); skyGroup.add(c); }
+  // the skyline: chimneys, the glass cone, tower blocks and a gasometer (or just trees, out in the park and at Crank)
+  const town = [1, 2, 4].includes(LEVEL_N);
+  const st = canvasTex(2048, 256, (g, w, h) => {
+    g.fillStyle = '#05040c';
+    if (town) {
+      let x = 0; while (x < w) { const bw = rand(20, 70), bh = rand(16, 60); g.fillRect(x, h - bh, bw, bh);
+        if (bh > 34) { g.fillStyle = 'rgba(255,200,110,.75)'; for (let k = 0; k < bh / 9; k++) if (Math.random() < .5) g.fillRect(x + rand(3, bw - 6), h - bh + 5 + k * 8, 3, 3); g.fillStyle = '#05040c'; } x += bw + rand(0, 12); }
+      for (let i = 0; i < 9; i++) { const cx = rand(40, w - 40), ch = rand(90, 170); g.fillRect(cx, h - ch, 9, ch); g.fillRect(cx - 2, h - ch, 13, 5); g.fillStyle = 'rgba(255,60,40,.9)'; g.fillRect(cx + 3, h - ch - 4, 3, 3); g.fillStyle = '#05040c'; }
+      for (const cx of [300, 1250]) { g.beginPath(); g.moveTo(cx - 44, h); g.quadraticCurveTo(cx - 20, h - 80, cx - 12, h - 130); g.lineTo(cx + 12, h - 130); g.quadraticCurveTo(cx + 20, h - 80, cx + 44, h); g.fill(); }      // glass cone
+      for (const cx of [760, 1700]) { g.fillRect(cx, h - 70, 90, 70); g.strokeStyle = '#05040c'; g.lineWidth = 3; for (let k = 0; k <= 6; k++) { g.beginPath(); g.moveTo(cx + k * 15, h - 70); g.lineTo(cx + k * 15, h - 96); g.stroke(); } g.strokeRect(cx, h - 96, 90, 26); } // gasometer
+      for (const cx of [520, 1480, 1900]) { g.fillRect(cx, h - 120, 34, 120); g.fillStyle = 'rgba(255,220,140,.8)'; for (let r = 0; r < 12; r++) for (let c = 0; c < 3; c++) if (Math.random() < .45) g.fillRect(cx + 5 + c * 9, h - 114 + r * 9, 4, 4); g.fillStyle = '#05040c'; }
+    } else { for (let x = 0; x < w; x += 9) { const th = 40 + Math.sin(x * .013) * 18 + Math.sin(x * .05) * 10 + rand(0, 22); g.beginPath(); g.arc(x, h - th + 10, rand(10, 18), 0, 7); g.fill(); g.fillRect(x - 9, h - th + 10, 20, th); } }
+  }, [2, 1]);
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(215, 215, 46, 48, 1, true), new THREE.MeshBasicMaterial({ map: st, transparent: true, side: THREE.BackSide, fog: false, depthWrite: false })); ring.position.y = 19; skyGroup.add(ring);
+  skyGroup.traverse((o) => { o.frustumCulled = false; o.renderOrder = -10; });
+  scene.add(skyGroup);
+}
+
+placeBoards();
 mergeStatic();
+buildSky();
 // showers on Westfield Street, Parr and the East Lancs only, raining roughly 30% of the time; rain and its sound always together
 const RAINY = [1, 2, 4].includes(LEVEL_N);
 const weather = { on: false, t: rand(8, 16), wet: 0 };
@@ -905,16 +962,17 @@ const SFX = {
 
 // ---------------------------------------------------------------- player + weapons
 const player = { pos: new THREE.Vector3(0, 0, 0), vel: new THREE.Vector3(), yaw: 0, pitch: 0, onGround: true, hp: 100, alive: true,
-  weapon: 0, ammo: [14, 18], grenades: 2, cool: 0, bob: 0, hurtT: 0 };
+  weapon: 0, ammo: [14, 18, 0], grenades: 2, cool: 0, bob: 0, hurtT: 0 };
 const WEAPONS = [
   { name: 'PIE LAUNCHER', ammoName: 'PIES', max: 30, rate: .45, click: .12 },
   { name: 'MUSHY PEA SHOTGUN', ammoName: 'TUBS', max: 36, rate: .7, click: .3 },
+  { name: 'AARF-KNACKERS', ammoName: 'BRICKS', max: 9, rate: .8, click: .45 },      // SHCN dictionary: a large house brick, good for lobbin'
 ];
 const keys = {}; let locked = false, sens = STORE.get('ph-sens', 1);
 document.addEventListener('keydown', (e) => {
   keys[e.code] = true;
   if (state.mode !== 'play') return;
-  if (e.code === 'Digit1') setWeapon(0); if (e.code === 'Digit2') setWeapon(1);
+  if (e.code === 'Digit1') setWeapon(0); if (e.code === 'Digit2') setWeapon(1); if (e.code === 'Digit3') setWeapon(2);
   if (e.code === 'KeyG' || e.code === 'KeyQ') throwGrenade();
   if (e.code === 'Space') e.preventDefault();
 });
@@ -923,7 +981,7 @@ let mouseDown = false;
 canvas.addEventListener('mousedown', (e) => { if (e.button === 0) { mouseDown = true; if (state.mode === 'play' && locked) fire(true); } if (e.button === 2) throwGrenade(); });
 document.addEventListener('mouseup', (e) => { if (e.button === 0) mouseDown = false; });
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-document.addEventListener('wheel', (e) => { if (state.mode === 'play') setWeapon(player.weapon ? 0 : 1); }, { passive: true });
+document.addEventListener('wheel', (e) => { if (state.mode === 'play') nextWeapon(); }, { passive: true });
 document.addEventListener('mousemove', (e) => {
   if (!locked || state.mode !== 'play') return;
   player.yaw -= e.movementX * .0022 * sens; player.pitch = clamp(player.pitch - e.movementY * .0022 * sens, -1.4, 1.4);
@@ -968,7 +1026,7 @@ if (TOUCH) {
   btn('tb-fire', () => { mouseDown = true; if (state.mode === 'play') fire(true); }, () => { mouseDown = false; }, true);
   btn('tb-jump', () => { keys.Space = true; }, () => { keys.Space = false; });
   btn('tb-gren', () => { if (state.mode === 'play') throwGrenade(); });
-  btn('tb-swap', () => { if (state.mode === 'play') setWeapon(player.weapon ? 0 : 1); });
+  btn('tb-swap', () => { if (state.mode === 'play') nextWeapon(); });
   btn('tb-pause', () => pause());
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
   document.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -999,10 +1057,17 @@ function makePeaGun() {
   const h = hand(0xf2c29b); h.position.set(0, -.16, .12); g.add(h);
   return g;
 }
-const guns = [makePieGun(), makePeaGun()];
+function makeBrickHand() {
+  const g = new THREE.Group();
+  const b = new THREE.Mesh(new THREE.BoxGeometry(.26, .15, .38), lam({ map: brickTex('#8a3a28', '#3a2a28') })); b.position.set(0, .02, -.16); b.rotation.set(.2, .3, 0); g.add(b);
+  const h = hand(0xf2c29b); h.position.set(0, -.14, -.05); g.add(h);
+  return g;
+}
+const guns = [makePieGun(), makePeaGun(), makeBrickHand()];
 guns.forEach((gun, i) => { gun.scale.setScalar(.4); gun.position.set(.22, -.2, -.4); gun.rotation.y = .06; gun.visible = i === 0; vm.add(gun); });
 let kick = 0, swapT = 0;
-function setWeapon(i) { if (i === player.weapon) return; player.weapon = i; guns.forEach((g, k) => g.visible = k === i); swapT = .25; SFX.click(); hud(); }
+function nextWeapon() { for (let k = 1; k <= 3; k++) { const i = (player.weapon + k) % 3; if (i < 2 || player.ammo[2] > 0) return setWeapon(i); } }
+function setWeapon(i) { if (i === player.weapon) return; if (i === 2 && player.ammo[2] <= 0) { toast('No aarf-knackers. Find some bricks.'); return; } player.weapon = i; guns.forEach((g, k) => g.visible = k === i); swapT = .25; SFX.click(); hud(); }
 
 // projectiles + effects
 const shots = [];      // player projectiles
@@ -1012,6 +1077,7 @@ const decals = [];
 const PIE_GEO = new THREE.CylinderGeometry(.16, .13, .08, 12), PIE_MAT = lam({ color: 0xd9a441 });
 const BARM_GEO = new THREE.SphereGeometry(.16, 10, 8), BARM_MAT = lam({ color: 0xe8d2a0 });
 const STIL_GEO = new THREE.BoxGeometry(.06, .18, .32), STIL_MAT = lam({ color: 0xd11a2a });
+const BRICK_GEO = new THREE.BoxGeometry(.22, .12, .34), BRICK_MAT = lam({ color: 0x9a4430 });
 const PROJ = {
   barm: { geo: BARM_GEO, mat: BARM_MAT, speed: 12, g: 9.8, burst: 'barm', hit: ['Barm to the face!', 'Bapped!'] },
   stiletto: { geo: STIL_GEO, mat: STIL_MAT, speed: 18, g: 3, burst: 'gravy', hit: ['Stilettoed!', 'Heel to the head!'] },
@@ -1026,7 +1092,7 @@ const PROJ = {
   acid: { geo: new THREE.SphereGeometry(.18, 8, 6), mat: new THREE.MeshBasicMaterial({ color: 0x9aff2a }), speed: 11, g: 6, burst: 'acid', hit: ['Ant spit!', 'Acid in the eye!', 'Urgh, ant goo!'] },
 };
 const PART_GEO = new THREE.BoxGeometry(.07, .07, .07);
-const partMats = { pie: lam({ color: 0xc89434 }), gravy: lam({ color: 0x6b3a12 }), pea: lam({ color: 0x4caf2a }), barm: lam({ color: 0xf2e2b8 }), star: new THREE.MeshBasicMaterial({ color: 0xffe16b }), can: lam({ color: 0xc8ccd8 }), acid: new THREE.MeshBasicMaterial({ color: 0x9aff2a }), feather: lam({ color: 0xd8d0c4 }) };
+const partMats = { pie: lam({ color: 0xc89434 }), gravy: lam({ color: 0x6b3a12 }), pea: lam({ color: 0x4caf2a }), barm: lam({ color: 0xf2e2b8 }), star: new THREE.MeshBasicMaterial({ color: 0xffe16b }), can: lam({ color: 0xc8ccd8 }), acid: new THREE.MeshBasicMaterial({ color: 0x9aff2a }), feather: lam({ color: 0xd8d0c4 }), brick: lam({ color: 0x9a4430 }) };
 function burst(pos, kind, n = 12, spd = 4) {
   for (let i = 0; i < n; i++) {
     const m = new THREE.Mesh(PART_GEO, partMats[kind]); m.position.copy(pos); scene.add(m);
@@ -1048,7 +1114,7 @@ function fire(click) {
   // every click fires straight away (short minimum gap); holding the button auto-fires at the slower rate
   if (swapT > 0 || (click ? player.clickCool > 0 : player.cool > 0)) return;
   const w = player.weapon;
-  if (player.ammo[w] <= 0) { SFX.click(); toast(pick(['Out of pies! Raid a chippy.', 'No peas left, lad.', 'Empty. Find some supplies.'])); player.cool = .4; return; }
+  if (player.ammo[w] <= 0) { SFX.click(); if (w === 2) { setWeapon(0); return; } toast(pick(['Out of pies! Raid a chippy.', 'No peas left, lad.', 'Ah\'m clempt! (starving – find supplies)'])); player.cool = .4; return; }
   player.ammo[w]--; player.cool = WEAPONS[w].rate; player.clickCool = WEAPONS[w].click; kick = 1; stats.shots++;
   const dir = camForward(), eye = eyePos();
   if (w === 0) {
@@ -1061,6 +1127,18 @@ function fire(click) {
     const v = target.clone().sub(from).divideScalar(tFly); v.y += .5 * 9.8 * tFly;
     const m = new THREE.Mesh(PIE_GEO, PIE_MAT); m.position.copy(from); scene.add(m);
     shots.push({ m, v, kind: 'pie', t: 3 });
+    for (const e of enemies) if (!e.dead && e.delay <= 0 && !e.T.melee && !e.T.boss && Math.random() < .3) {     // some of them see it coming and sidestep
+      const to = e.g.position.clone().sub(eye).setY(0), d = to.length(); if (d > 7 && d < 30 && to.normalize().dot(dir) > .97) { e.dodgeT = .4; e.strafe = Math.random() < .5 ? 1 : -1; } }
+  } else if (w === 2) {
+    SFX.throw(); tone(90, .1, 'sine', .2, 50);
+    const h = rayHit(eye, dir, 60), target = h.point ? h.point.clone() : eye.clone().addScaledVector(dir, 30);
+    if (h.enemy) target.y = Math.max(target.y, h.enemy.g.position.y + 1.2 * h.enemy.scale);
+    const from = eye.clone().addScaledVector(dir, .6).add(new THREE.Vector3(0, -.12, 0));
+    const tFly = Math.max(.1, from.distanceTo(target) / 24);
+    const v = target.clone().sub(from).divideScalar(tFly); v.y += .5 * 9.8 * tFly;
+    const m = new THREE.Mesh(BRICK_GEO, BRICK_MAT); m.position.copy(from); scene.add(m);
+    shots.push({ m, v, kind: 'brick', t: 3 });
+    if (player.ammo[2] <= 0) setTimeout(() => { if (player.weapon === 2) setWeapon(0); }, 350);
   } else {
     SFX.pea(); let hitAny = false;
     for (let i = 0; i < 10; i++) {
@@ -1073,6 +1151,7 @@ function fire(click) {
   }
   hud();
 }
+const WALL_X = STREET_HALF + .55;
 function rayHit(o, d, range) {
   const p = new THREE.Vector3();
   for (let s = .3; s < range; s += .2) {
@@ -1083,7 +1162,7 @@ function rayHit(o, d, range) {
       if (dx * dx + dz * dz < (.38 * e.scale) ** 2 && p.y > 0 && p.y < h) return { enemy: e, point: p.clone() };
     }
     if (p.y <= .01) return { point: new THREE.Vector3(p.x, .01, p.z), normal: new THREE.Vector3(0, 1, 0) };
-    if (Math.abs(p.x) >= 9.95) return { point: new THREE.Vector3(Math.sign(p.x) * 9.95, p.y, p.z), normal: new THREE.Vector3(-Math.sign(p.x), 0, 0) };
+    if (Math.abs(p.x) >= WALL_X) return { point: new THREE.Vector3(Math.sign(p.x) * WALL_X, p.y, p.z), normal: new THREE.Vector3(-Math.sign(p.x), 0, 0) };
     for (const c of colliders) if (p.y < 1.2 && p.x > c.minX && p.x < c.maxX && p.z > c.minZ && p.z < c.maxZ) return { point: p.clone(), normal: d.clone().negate() };
   }
   return {};
@@ -1102,8 +1181,8 @@ function explode(pos, radius, dmg, kind) {
     const d = e.g.position.distanceTo(new THREE.Vector3(pos.x, e.g.position.y, pos.z));
     if (d < radius) { damageEnemy(e, dmg * (1 - d / radius * .6), new THREE.Vector3(e.g.position.x - pos.x, 0, e.g.position.z - pos.z).normalize()); }
   }
-  burst(pos, kind, kind === 'barm' ? 40 : 16, kind === 'barm' ? 8 : 4); burst(pos, 'gravy', kind === 'barm' ? 20 : 8, kind === 'barm' ? 7 : 3);
-  decal(new THREE.Vector3(pos.x, .01, pos.z), new THREE.Vector3(0, 1, 0), 'pie', kind === 'barm' ? 1.6 : .7);
+  burst(pos, kind, kind === 'barm' ? 40 : 16, kind === 'barm' ? 8 : 4); if (kind !== 'brick') burst(pos, 'gravy', kind === 'barm' ? 20 : 8, kind === 'barm' ? 7 : 3);
+  if (kind !== 'brick') decal(new THREE.Vector3(pos.x, .01, pos.z), new THREE.Vector3(0, 1, 0), 'pie', kind === 'barm' ? 1.6 : .7);
   if (kind === 'barm') { SFX.boom(); shake = .5; } else SFX.splat();
 }
 
@@ -1111,10 +1190,10 @@ function explode(pos, radius, dmg, kind) {
 const enemies = [];
 const TYPES = {
   wiganer: { hp: 40, speed: 3.3, scale: 1, range: [6, 14], dmg: 8, cd: [1.4, 2.6], score: 100, proj: 'barm',
-    quips: ['Get here, you knobhead!', 'Saints are shite!', 'You pie-eyed twat!', 'Come ere you Saint!', 'WIGAN FOREVER!', 'Get back to Thatto Heath!', 'You\'re not famous!', 'Pie eaters? Says you!', 'Have a barm!'],
+    quips: ['Savus a pie!', 'Yer soft melt!', 'Ah\'m clempt, me!', 'Get here, you knobhead!', 'Saints are shite!', 'You pie-eyed twat!', 'Come ere you Saint!', 'WIGAN FOREVER!', 'Get back to Thatto Heath!', 'You\'re not famous!', 'Pie eaters? Says you!', 'Have a barm!'],
     hit: ['Ow me barm!', 'Not the shirt!', 'That\'s me Sunday best!'], },
   bouncer: { hp: 140, speed: 2.4, scale: 1.18, range: [0, 1.6], dmg: 16, cd: [1.1, 1.6], score: 300, melee: true,
-    quips: ['Beak, mate?', 'Give us your gear.', 'Beak, mate? Beak?', 'Give us your gear, lad.', 'Not tonight, lad.', 'Name\'s not down.', 'Not in them trainers.', 'Have you been drinking?', 'ID. Now.'],
+    quips: ['You weren\'t born at Pilks – shift!', 'Put wood in th\'ole on yer way out.', 'Beak, mate?', 'Give us your gear.', 'Beak, mate? Beak?', 'Give us your gear, lad.', 'Not tonight, lad.', 'Name\'s not down.', 'Not in them trainers.', 'Have you been drinking?', 'ID. Now.'],
     hit: ['Right. That\'s it.', 'You\'re barred.', 'Oi!'], },
   hen: { hp: 85, speed: 3.6, scale: .95, range: [3, 10], dmg: 7, cd: [1.1, 1.9], score: 600, proj: 'stiletto',
     quips: ['FUCKING DICKHEAD!', 'SMALL PENIS!', 'WANKER!', 'Oi, small penis!', 'GET HIM GIRLS!', 'WOOOO!', 'Mind me nails!', 'SHOTS!', 'Who invited HIM?!'],
@@ -1124,10 +1203,10 @@ const TYPES = {
     hit: ['ME VEIL!', 'Do you know how much this cost?!', 'RIGHT!'], },
   // level 2: Parr
   scally: { hp: 45, speed: 3.6, range: [6, 13], dmg: 8, cd: [1.3, 2.4], score: 120, proj: 'can',
-    quips: ['Shut it, you bellend!', 'What you lookin\' at, dickhead?', 'Get to fuck!', 'Ey you! What you lookin at?', 'Is that your bike, mate?', 'Giz a pie!', 'You\'re not from round ere!', 'PARR MASSIVE!', 'Me mam\'ll batter you!'],
+    quips: ['Stop mitherin\'!', 'Lend us one of yer nodders!', 'Shut it, you bellend!', 'What you lookin\' at, dickhead?', 'Get to fuck!', 'Ey you! What you lookin at?', 'Is that your bike, mate?', 'Giz a pie!', 'You\'re not from round ere!', 'PARR MASSIVE!', 'Me mam\'ll batter you!'],
     hit: ['Me trackie!', 'Not the cap!', 'Ow! I\'m tellin\'!'] },
   mum: { hp: 95, speed: 3.3, range: [2, 9], dmg: 10, cd: [.9, 1.6], score: 250, proj: 'slipper', mixed: true, meleeLines: ['Rolling-pinned!', 'Your tea\'s in the dog!', 'Clipped round the ear!'],
-    quips: ['You little shit!', 'Get in, you cheeky bastard!', 'I\'ll knock your bloody block off!', 'GET IN THIS HOUSE!', 'Do you know what time it is?!', 'I\'ll ring your mother!', 'I\'ve just had me hair done!', 'KEEP IT DOWN!'],
+    quips: ['I\'ll gi\' thee summat to skryk abarht!', 'Put wood in th\'ole!', 'Yer little sallywanger!', 'You little shit!', 'Get in, you cheeky bastard!', 'I\'ll knock your bloody block off!', 'GET IN THIS HOUSE!', 'Do you know what time it is?!', 'I\'ll ring your mother!', 'I\'ve just had me hair done!', 'KEEP IT DOWN!'],
     hit: ['Me curlers!', 'Me best dressing gown!', 'RIGHT. That\'s it.'] },
   ant: { hp: 45, speed: 5.2, range: [0, 1.7], dmg: 8, cd: [.7, 1.2], score: 120, melee: true, sfx: 'hiss', creature: () => makeAnt('ant'), meleeLines: ['Bitten!', 'Nipped by an ant!'],
     quips: ['SKREEEE!', '*click click click*', 'HSSSSS!'], hit: ['SKRK!', '*angry clicking*'] },
@@ -1144,54 +1223,65 @@ const TYPES = {
     quips: ['HOOOOOOOONK!!!', 'THIS IS MY PARK!', '*HONKS IN GOOSE*', 'HONK. HONK. HONK.'], hit: ['*outraged honking*', 'HONK!!'] },
   // level 4: the East Lancs
   scouser: { hp: 50, speed: 3.8, range: [6, 13], dmg: 9, cd: [1.2, 2.2], score: 150, proj: 'hubcap',
-    quips: ['Eh, dickhead, eh!', 'Calm down, you knobhead!', 'Twat!', 'Giz yer fuckin\' wheels!', 'Eh, eh, EH!', 'Is this your car, la?', 'Calm down!', 'Giz yer wheels!', 'We\'re not payin\' no charge!', 'Sound, la!'], hit: ['Me shell suit!', 'Ah, me perm!', 'Behave!'] },
+    quips: ['Yer what? Talk proper, woolyback!', 'Eh, dickhead, eh!', 'Calm down, you knobhead!', 'Twat!', 'Giz yer fuckin\' wheels!', 'Eh, eh, EH!', 'Is this your car, la?', 'Calm down!', 'Giz yer wheels!', 'We\'re not payin\' no charge!', 'Sound, la!'], hit: ['Me shell suit!', 'Ah, me perm!', 'Behave!'] },
   roadworker: { hp: 120, speed: 2.8, range: [0, 1.8], dmg: 14, cd: [1.1, 1.6], score: 300, melee: true, meleeLines: ['Shovelled!', 'Lane closed!', 'Road works – you\'re the road!'],
-    quips: ['Bugger off, we\'re on a brew!', 'Oi, knobhead! Lane\'s shut!', 'Lane closed, mate!', 'We\'re on our break!', 'Eighteen-month delay, this!', 'Use the diversion!'], hit: ['Me tea!', 'Health and safety!'] },
+    quips: ['Stop faffin\' about!', 'Bugger off, we\'re on a brew!', 'Oi, knobhead! Lane\'s shut!', 'Lane closed, mate!', 'We\'re on our break!', 'Eighteen-month delay, this!', 'Use the diversion!'], hit: ['Me tea!', 'Health and safety!'] },
   warden: { hp: 70, speed: 3.4, range: [5, 12], dmg: 9, cd: [1, 1.8], score: 200, proj: 'ticket',
     quips: ['Sod off, I\'m working!', 'That\'s a ticket, you prick!', 'You can\'t park there!', 'That\'s a ticket!', 'Double yellows, lad!', 'I\'m just doing me job!'], hit: ['I\'ll appeal that!', 'Me notebook!'] },
   trucker: { hp: 150, speed: 2.6, range: [0, 1.9], dmg: 16, cd: [1.1, 1.7], score: 300, melee: true, meleeLines: ['Jack-knifed!', 'Trucker\'s headlock!'],
-    quips: ['Move, you pillock!', 'Bloody hell, not another one!', 'Get off the road, you tit!', 'Oi! Me butty!', 'I\'m on me tachograph!', 'Ten-four, good buddy!', 'Get off the hard shoulder!'], hit: ['Me bacon barm!', 'Steady on!'] },
+    quips: ['Ah\'m clempt – where\'s me split?', 'Move, you pillock!', 'Bloody hell, not another one!', 'Get off the road, you tit!', 'Oi! Me butty!', 'I\'m on me tachograph!', 'Ten-four, good buddy!', 'Get off the hard shoulder!'], hit: ['Me bacon barm!', 'Steady on!'] },
   mp: { hp: 1000, speed: 2.4, range: [4, 12], dmg: 13, cd: [.7, 1.2], score: 3000, proj: 'manifesto', boss: true, spawner: 'scouser', bubbleY: 2.6,
     quips: ['Bugger off, peasant!', 'Out of my way, you oik!', 'I\'ll have your bollocks for this!', 'CONGESTION CHARGE! FIVE POUND!', 'Vote Flangefelter!', 'No Scousers past Rainhill!', 'I\'m an MP, you know!', 'This is ALL in my manifesto!'], hit: ['My expenses!', 'I\'ll have you in the Commons!', 'Point of order!'] },
   // level 5: Crank Caverns
   bat: { hp: 28, speed: 5.4, range: [0, 1.6], dmg: 7, cd: [.6, 1.1], score: 120, melee: true, sfx: 'screech', creature: () => makeBat(), meleeLines: ['Batted!', 'Bitten by a bat!'], bubbleY: 2.4,
     quips: ['*screech*', '*flap flap flap*', 'EEEEE!'], hit: ['*squeak*'] },
   hermit: { hp: 60, speed: 3, range: [5, 11], dmg: 10, cd: [1, 1.8], score: 200, proj: 'rock',
-    quips: ['Bugger off out me cave!', 'Bloody kids!', 'Get out of my cave!', 'I\'ve lived here since 1974!', 'You\'ll not get me pies!', 'Is it still the eighties?'], hit: ['Me beard!', 'Ow, me knees!'] },
+    quips: ['Corporation pop only down \'ere!', 'Any owght from\'t shop?', 'Bugger off out me cave!', 'Bloody kids!', 'Get out of my cave!', 'I\'ve lived here since 1974!', 'You\'ll not get me pies!', 'Is it still the eighties?'], hit: ['Me beard!', 'Ow, me knees!'] },
   pitman: { hp: 130, speed: 2.9, range: [0, 1.8], dmg: 14, cd: [1, 1.6], score: 300, melee: true, meleeLines: ['Pickaxed!', 'Sent down the pit!'],
-    quips: ['Get stuffed, Saint!', 'Dig this, dickhead!', 'Dig faster, lads!', 'For the Pie Baron!', 'WIGAN!', 'Nobody leaves the pie mine!'], hit: ['Me lamp!', 'Me hat!'] },
+    quips: ['Geritetten, lads!', 'Yer scon\'yed!', 'Get stuffed, Saint!', 'Dig this, dickhead!', 'Dig faster, lads!', 'For the Pie Baron!', 'WIGAN!', 'Nobody leaves the pie mine!'], hit: ['Me lamp!', 'Me hat!'] },
   beast: { hp: 650, speed: 3.6, range: [0, 2.6], dmg: 20, cd: [1.2, 1.8], score: 2000, melee: true, bubbleY: 2.6, meleeLines: ['Mauled by the Beast!', 'Flung across the cave!'],
     quips: ['RAAAARGH!', 'GRRRRR!', '*the beast sniffs the air*'], hit: ['RAAARGH!!', 'GRAAAH!'] },
   piebaron: { hp: 1300, speed: 2.6, range: [4, 12], dmg: 15, cd: [.6, 1.1], score: 5000, proj: 'bigpie', boss: true, spawner: 'wiganer', bubbleY: 2.9,
-    quips: ['EAT PIE, YOU BASTARD!', 'You\'ll never stop me, you knobhead!', 'Wigan fucking forever!', 'I AM THE PIE BARON!', 'Wigan will rule St Helens!', 'You\'ll never stop the pies!', 'EAT PIE, SAINT!', 'Winning Wigan DNA!'], hit: ['My crust!', 'Not the hat!', 'You\'ll pay for that!'] },
+    quips: ['Peas above sticks, you!', 'I\'ll have thee bortered in gravy!', 'EAT PIE, YOU BASTARD!', 'You\'ll never stop me, you knobhead!', 'Wigan fucking forever!', 'I AM THE PIE BARON!', 'Wigan will rule St Helens!', 'You\'ll never stop the pies!', 'EAT PIE, SAINT!', 'Winning Wigan DNA!'], hit: ['My crust!', 'Not the hat!', 'You\'ll pay for that!'] },
+  inspector: { hp: 70, speed: 3.2, range: [5, 12], dmg: 9, cd: [1.1, 1.9], score: 220, proj: 'ticket',
+    quips: ['UN weapons inspector, coming through!', 'Is that pie a weapon of mass destruction?', 'Which way\'s the chippy?', 'We know you\'re hiding something!'], hit: ['My clipboard!', 'This is going in my report!'] },
   keeper: { hp: 130, speed: 2.7, range: [0, 1.7], dmg: 14, cd: [1.1, 1.6], score: 300, melee: true, meleeLines: ['Clipped by a keeper!', 'Escorted off the premises!', 'Whistled at, then walloped!'],
-    quips: ['Off the bloody grass, you sod!', 'Clear off, you little shit!', 'Keep off the grass!', 'Park\'s shut, lad!', 'No ball games!', 'Can you not read the sign?', 'I\'ve got a whistle and I\'ll use it!'], hit: ['That\'s council property!', 'Right, you\'re banned!', 'Oi!'] },
+    quips: ['Stop roaghmin\' about!', 'It\'s slutchy over there, keep off!', 'Off the bloody grass, you sod!', 'Clear off, you little shit!', 'Keep off the grass!', 'Park\'s shut, lad!', 'No ball games!', 'Can you not read the sign?', 'I\'ve got a whistle and I\'ll use it!'], hit: ['That\'s council property!', 'Right, you\'re banned!', 'Oi!'] },
   drinker: { hp: 60, speed: 2.8, range: [6, 12], dmg: 9, cd: [1.4, 2.4], score: 150, proj: 'can',
-    quips: ['Fuck off, it\'s my bench!', 'Gerroff me cider, ya twat!', 'Spare us 20p, mate?', 'This is MY bench!', 'Wanna can?', 'I\'ve been sat here since 1987!'], hit: ['Me cider!', 'Ow, me can!'] },
+    quips: ['Savus on that tab!', 'Looks like burgie water, this!', 'Fuck off, it\'s my bench!', 'Gerroff me cider, ya twat!', 'Spare us 20p, mate?', 'This is MY bench!', 'Wanna can?', 'I\'ve been sat here since 1987!'], hit: ['Me cider!', 'Ow, me can!'] },
 };
+const BLOB_GEO = new THREE.CircleGeometry(.62, 16), BLOB_MAT = new THREE.MeshBasicMaterial({ map: canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(0,0,0,.6)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 });
 function spawn(type, x, z, delay = 0) {
   x = clamp(x, -STREET_HALF + .8, STREET_HALF - .8);
   const T = TYPES[type], c = T.creature ? T.creature() : makeCharacter(type), g = c.root; g.position.set(x, 0, z); scene.add(g);
   const hp0 = Math.round(T.hp * EASY.hp);
   const e = { type, T, g, c, hp: hp0, max: hp0, scale: c.scale, throwT: 0, cd: rand(.6, 1.6) + delay, dead: false, deadT: 0, walk: rand(0, 6), strafe: Math.random() < .5 ? 1 : -1,
     strafeT: rand(1, 3), sayT: 0, bubble: null, attackT: 0, hitT: 0, spawnT: 4, delay };
+  const sh = new THREE.Mesh(BLOB_GEO, BLOB_MAT); sh.rotation.x = -Math.PI / 2; sh.position.y = .03 / c.scale; sh.scale.setScalar(T.creature ? 1.5 : 1); g.add(sh);
   g.visible = delay <= 0;
   enemies.push(e); return e;
 }
 function say(e, text) {
   if (e.bubble) { e.g.remove(e.bubble); e.bubble.material.map.dispose(); }
-  e.bubble = textSprite(text, '#111', e.T.boss ? '#ffe3f2' : '#ffffff'); e.bubble.position.set(0, e.T.bubbleY || 2.75, 0); e.bubble.scale.multiplyScalar(1 / e.scale);
+  e.bubble = textSprite(text, '#111', e.T.boss ? '#ffe3f2' : '#ffffff'); e.bubble.position.set(0, (e.T.bubbleY || 2.75) + (e.name ? .3 : 0), 0); e.bubble.scale.multiplyScalar(1 / e.scale);
   e.g.add(e.bubble); e.sayT = 2.2;
 }
 function damageEnemy(e, dmg, dir) {
   if (e.dead) return;
+  if (player.buffT > 0 && dmg < 5000) dmg *= 2;
   e.hp -= dmg; e.hitT = .15; stats.dmg += dmg;
+  if (e.T.boss && !e.rage && e.hp > 0 && e.hp < e.max * .5) {      // bosses lose their rag at half health
+    e.rage = 1.3; banner(`${NAMES[e.type]} HAS GOT CHINNY!`, 'Tellins for: properly annoyed. Faster and angrier.'); say(e, pick(e.T.quips)); shake = Math.max(shake, .4); burst(e.g.position.clone().setY(1.5 * e.scale), 'star', 16, 5); }
   if (e.hp > 0 && e.throwT <= 0 && Math.random() < .6) e.c.ctl.once(Math.random() < .5 ? 'Hit_A' : 'Hit_B', 1.6);
   if (dir) e.g.position.addScaledVector(dir.clone().setY(0).normalize(), .12);
   if (Math.random() < .2) say(e, pick(e.T.hit));
   if (e.hp <= 0) {
-    e.dead = true; e.deadT = 0; e.throwT = 0; e.c.ctl.once(Math.random() < .5 ? 'Death_A' : 'Death_B', 1.1, true); stats.kos++; score += e.T.score; SFX.ko(); hitMarker(true);
-    killfeed(`${NAMES[e.type] || e.type} splatted  +${e.T.score}`); if (e.T.creature) burst(e.g.position.clone().setY(1), e.type.includes('goose') ? 'feather' : 'acid', 14, 3);
+    e.dead = true; e.deadT = 0; e.throwT = 0; e.c.ctl.once(Math.random() < .5 ? 'Death_A' : 'Death_B', 1.1, true); stats.kos++; SFX.ko(); hitMarker(true);
+    const mult = comboKill(), pts = Math.round(e.T.score * (e.scoreMul || 1) * mult); score += pts;
+    killfeed(`${e.name || NAMES[e.type] || e.type} splatted  +${pts}${mult > 1 ? '  ×' + mult : ''}`);
+    if (e.tag) { e.g.remove(e.tag); e.tag = null; }
+    if (e.name) radio(['BRIAN THONG', `${e.name} is down! That's going in the paper.`], .6);
+    if (e.T.boss) { slowT = 1.5; callout('SPLATTED!', '#ff5fb4'); } else if (combo.n < 2 && Math.random() < .5) callout(lingo(pick(['FETTLED', 'BORTERED', 'LOBBED', 'YER SOFT MELT', 'GERROFF']))); if (e.T.creature) burst(e.g.position.clone().setY(1), e.type.includes('goose') ? 'feather' : 'acid', 14, 3);
     if (e.bubble) { e.g.remove(e.bubble); e.bubble = null; }
     const stars = new THREE.Group(); for (let i = 0; i < 4; i++) { const s = new THREE.Mesh(new THREE.OctahedronGeometry(.08), partMats.star); s.position.set(Math.cos(i * 1.57) * .35, 2.3, Math.sin(i * 1.57) * .35); stars.add(s); }
     e.stars = stars; e.g.add(stars);
@@ -1200,7 +1290,7 @@ function damageEnemy(e, dmg, dir) {
 }
 const NAMES = { wiganer: 'Wiganer', bouncer: 'Bouncer', hen: 'Bridesmaid', bride: 'THE BRIDE', scally: 'Scally', mum: 'Angry mum', ant: 'Giant ant', spitter: 'Spitter ant', soldier: 'Soldier ant',
   queen: 'THE QUEEN', goose: 'Goose', mothergoose: 'MOTHER GOOSE', keeper: 'Park keeper', drinker: 'Bench drinker',
-  scouser: 'Scouser', roadworker: 'Road worker', warden: 'Traffic warden', trucker: 'Trucker', mp: 'FRED FLANGEFELTER MP', bat: 'Bat', hermit: 'Cave hermit', pitman: 'Wigan pitman', beast: 'THE BEAST', piebaron: 'THE PIE BARON' };
+  scouser: 'Scouser', roadworker: 'Road worker', warden: 'Traffic warden', trucker: 'Trucker', inspector: 'UN weapons inspector', mp: 'FRED FLANGEFELTER MP', bat: 'Bat', hermit: 'Cave hermit', pitman: 'Wigan pitman', beast: 'THE BEAST', piebaron: 'THE PIE BARON' };
 function enemyThrow(e) { e.throwT = e.T.creature ? .2 : .38; e.c.ctl.once('Throw', 1.5); }
 function launchThrow(e) {
   const from = e.g.position.clone().add(new THREE.Vector3(0, (e.T.mouthY || 1.6) * e.scale, 0));
@@ -1213,11 +1303,15 @@ function launchThrow(e) {
 }
 // difficulty: enemies hit softer, fire less often, aim worse and go down quicker; your aim still has to be good
 const EASY = { dmg: .6, hp: .8, cd: 1.35, spread: 1.1 };
-function hurtPlayer(dmg, msg) {
+let lowWarned = false, slowT = 0, dirT = 0;
+function hurtPlayer(dmg, msg, src) {
   if (!player.alive || state.mode !== 'play') return;
+  if (src) { const dx = src.x - player.pos.x, dz = src.z - player.pos.z, fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
+    H.dir.style.transform = `translate(-50%,-50%) rotate(${Math.atan2(-fz * dx + fx * dz, fx * dx + fz * dz)}rad)`; H.dir.style.opacity = 1; dirT = .9; }
   dmg = Math.round(dmg * EASY.dmg); player.calmT = 0;
   player.hp -= dmg; player.hurtT = .4; SFX.hurt(); shake = Math.max(shake, .18); stats.taken += dmg;
   if (msg && Math.random() < .5) toast(msg);
+  if (player.hp > 0 && player.hp < 30 && !lowWarned) { lowWarned = true; radio(['BRIAN THONG', 'You look bortered, lad. Find a cuppa and stop skryking.']); }
   if (player.hp <= 0) { player.hp = 0; die(); }
   hud();
 }
@@ -1229,6 +1323,10 @@ const PICK = {
   pies: { label: 'Box of pies (+8 pies)', col: 0xd9a441, apply: () => { player.ammo[0] = Math.min(30, player.ammo[0] + 8); } },
   peas: { label: 'Mushy peas (+10 tubs)', col: 0x4caf2a, apply: () => { player.ammo[1] = Math.min(36, player.ammo[1] + 10); } },
   barm: { label: 'Barm cake (+1 grenade)', col: 0xf2e2b8, apply: () => { player.grenades = Math.min(5, player.grenades + 1); } },
+  // straight out of the SHCN dictionary
+  lobby: { label: 'Bowl of lobby – hotpot without the crust (full health)', col: 0xb8642a, apply: () => { player.hp = 100; lowWarned = false; } },
+  bull: { label: 'Bull Bitter! Double damage for 15 seconds', col: 0x7a1e10, apply: () => { player.buffT = 15; callout('BULL BITTER!', '#ff6a3b'); } },
+  brick: { label: 'Aarf-knackers (+3 bricks, press 3) – good for lobbin\'', col: 0x9a4430, apply: () => { player.ammo[2] = Math.min(9, player.ammo[2] + 3); } },
 };
 function addPickup(kind, x, z) {
   x = clamp(x, -STREET_HALF + .8, STREET_HALF - .8);
@@ -1238,8 +1336,8 @@ function addPickup(kind, x, z) {
   const ring = new THREE.Mesh(new THREE.RingGeometry(.35, .45, 20), new THREE.MeshBasicMaterial({ color: 0xfda138, transparent: true, opacity: .7, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.y = -.48; g.add(ring);
   g.position.set(x, .6, z); scene.add(g); pickups.push({ g, kind, t: rand(0, 6) });
 }
-function dropPickup(x, z) { addPickup(pick(['pies', 'pies', 'peas', 'peas', 'tea', 'barm']), x, z); }
-[['pies', 4, -16], ['peas', -4, -22], ['tea', 7.5, -60], ['pies', -7.5, -64], ['peas', 6, -105], ['barm', -6, -108], ['tea', -7, -150], ['pies', 7, -152], ['peas', -5, -156], ['barm', 5, -189], ['tea', -7.6, -191], ['pies', 7.6, -192]].forEach(([k, x, z]) => addPickup(k, x, z));
+function dropPickup(x, z) { addPickup(pick(['pies', 'pies', 'pies', 'peas', 'peas', 'peas', 'tea', 'tea', 'barm', 'barm', 'brick', 'brick', 'bull', 'lobby']), x, z); }
+[['pies', 4, -16], ['peas', -4, -22], ['tea', 7.5, -60], ['pies', -7.5, -64], ['peas', 6, -105], ['barm', -6, -108], ['tea', -7, -150], ['pies', 7, -152], ['peas', -5, -156], ['barm', 5, -189], ['tea', -7.6, -191], ['pies', 7.6, -192], ['brick', -6.5, -84], ['bull', 6.5, -168]].forEach(([k, x, z]) => addPickup(k, x, z));
 
 // ---------------------------------------------------------------- encounters
 const LEVELS = {
@@ -1330,19 +1428,27 @@ const LEVELS = {
       { trigger: -190, title: 'FINAL BOSS – THE PIE BARON OF WIGAN', boss: true, spawn: () => { const b = spawn('piebaron', 0, -214); say(b, 'I AM THE PIE BARON!'); for (let i = 0; i < 4; i++) { const w = spawn(i % 2 ? 'pitman' : 'wiganer', rand(-6, 6), -206 - i * 2, i * 1.8); w.minion = true; } } },
     ] },
 };
+// named faces from the SHCN archive turn up mid-level
+{ const add = (lv, enc, fn) => { const E = LEVELS[lv].encounters[enc], old = E.spawn; E.spawn = () => { old(); fn(); }; };
+  add(1, 2, () => elite('bouncer', 0, -136, 'ARTHUR SHACKLEBOTTOM', { delay: 5, scale: 1.12, quips: ['If you\'re over 4\'5 you\'re not coming in!', 'I love the little fellahs!', 'Nexus is MY club!', 'Not on the list, lad!'] }));
+  add(2, 1, () => elite('mum', 0, -90, 'DAVE PONDLIFE\'S MAM', { delay: 4, quips: ['Where\'s our Dave?!', 'He was out on that burgy ALL NIGHT!', 'Giant ants, my arse!', 'GET IN THIS HOUSE!'] }));
+  add(3, 1, () => elite('drinker', 0, -90, 'EDDIE LOON', { delay: 3, quips: ['I\'m a have-a-go grandad, me!', 'Forty-five and still got it!', 'Been on it since dinner!', 'Come ed then, the lot of yer!'] }));
+  add(4, 2, () => { for (const [x, d] of [[-6, 3], [6, 6]]) spawn('inspector', x, -140, d); });
+  add(5, 0, () => { spawn('inspector', -5, -48, 4); spawn('inspector', 5, -52, 6); });
+  add(5, 1, () => elite('mum', 0, -92, 'CLLR DORIS CRUDD', { delay: 5, quips: ['Unusual and Controversial Schemes Committee!', 'We\'re running out of landfill!', 'We\'ve already filled Billinge!', 'It was passed at the meeting!'] })); }
 const LV = LEVELS[LEVEL_N];
 const ENCOUNTERS = LV.encounters;
 let coachSpawn = false;
 
 // ---------------------------------------------------------------- HUD
 const H = { hp: $('ph-hp'), hpTxt: $('ph-hptxt'), weap: $('ph-weap'), ammo: $('ph-ammo'), gren: $('ph-gren'), obj: $('ph-obj'), feed: $('ph-feed'), toast: $('ph-toast'),
-  hit: $('ph-hit'), vig: $('ph-vig'), boss: $('ph-boss'), bossBar: $('ph-bossbar'), bossName: $('ph-bossname'), banner: $('ph-banner'), score: $('ph-score'), hudWrap: $('ph-hud') };
+  hit: $('ph-hit'), vig: $('ph-vig'), boss: $('ph-boss'), bossBar: $('ph-bossbar'), bossName: $('ph-bossname'), banner: $('ph-banner'), score: $('ph-score'), hudWrap: $('ph-hud'), dir: $('ph-dir'), call: $('ph-call'), combo: $('ph-combo'), radio: $('ph-radio'), buff: $('ph-buff') };
 let score = 0;
 const stats = { shots: 0, hits: 0, kos: 0, dmg: 0, taken: 0, start: 0, time: 0 };
 function hud() {
   H.hp.style.width = player.hp + '%'; H.hp.style.background = player.hp < 30 ? '#e8303a' : '#39ff14'; H.hpTxt.textContent = Math.ceil(player.hp);
   H.weap.textContent = WEAPONS[player.weapon].name; H.ammo.textContent = `${player.ammo[player.weapon]} ${WEAPONS[player.weapon].ammoName}`;
-  H.gren.textContent = `BARM CAKES × ${player.grenades}`; H.score.textContent = 'SCORE ' + score;
+  H.gren.textContent = `BARM CAKES × ${player.grenades}` + (player.ammo[2] > 0 && player.weapon !== 2 ? ` · BRICKS × ${player.ammo[2]}` : ''); H.score.textContent = 'SCORE ' + score;
 }
 let toastT = 0; function toast(t) { H.toast.textContent = t; H.toast.style.opacity = 1; toastT = 2.2; }
 function killfeed(t) { const d = document.createElement('div'); d.textContent = t; H.feed.prepend(d); setTimeout(() => d.remove(), 3500); while (H.feed.children.length > 5) H.feed.lastChild.remove(); }
@@ -1350,6 +1456,131 @@ let hitT = 0; function hitMarker(big) { H.hit.style.opacity = 1; H.hit.style.tra
 let bannerT = 0; function banner(t, sub) { H.banner.innerHTML = `<b>${t}</b>${sub ? `<span>${sub}</span>` : ''}`; H.banner.style.opacity = 1; bannerT = 3; SFX.wave(); }
 let shake = 0, lastVig = -1, lastObj = '';
 function setObj(t) { if (t !== lastObj) { H.obj.textContent = t; lastObj = t; } }
+
+// ================================================================ v2: SHCN tie-ins, combos, radio, scoops
+// ---- Tellins lingo, straight from the SHCN dictionary. The gloss shows the first couple of times.
+const LINGO = { FETTLED: 'sorted out', BORTERED: 'covered in it', "SCON'YED": 'scone head = fool', LOBBED: 'thrown', GERROFF: 'get off', 'YER SOFT MELT': 'you daft thing',
+  CLEMPT: 'starving', CHINNY: 'annoyed', MITHERING: 'bothering', SLUTCHY: 'muddy', SNAPED: 'upset', SKRYKING: 'crying' };
+const lingoSeen = {};
+function lingo(word) { lingoSeen[word] = (lingoSeen[word] || 0) + 1; return lingoSeen[word] <= 2 && LINGO[word] ? `${word}! <i>(${LINGO[word]})</i>` : `${word}!`; }
+let callT = 0;
+function callout(html, col) { H.call.innerHTML = html; H.call.style.color = col || '#fda138'; H.call.style.opacity = 1; H.call.style.transform = 'translate(-50%,-50%) scale(1.25)'; callT = 1.1;
+  requestAnimationFrame(() => { H.call.style.transform = 'translate(-50%,-50%) scale(1)'; }); }
+
+// ---- combos
+const COMBO_NAMES = ['', '', 'DOUBLE SPLAT', 'SPLIT AND GRAVY', 'PEAS ABOVE STICKS', 'PROPER TELLINS LEGEND'];
+const combo = { n: 0, t: 0, best: 0 };
+function comboKill() {
+  combo.n = combo.t > 0 ? combo.n + 1 : 1; combo.t = 4.5; combo.best = Math.max(combo.best, combo.n);
+  if (combo.n >= 2) { H.combo.innerHTML = `<b>COMBO ×${combo.n}</b>${COMBO_NAMES[Math.min(5, combo.n)]}`; H.combo.style.opacity = 1; tone(520 + combo.n * 90, .09, 'square', .08); }
+  return 1 + Math.min(4, combo.n - 1) * .5;       // ×1, ×1.5, ×2 … up to ×3
+}
+
+// ---- the radio: Brian Thong and the SHCN correspondents
+const RADIO = {
+  1: { start: ['BRIAN THONG', 'Alrite fettler. Shacklebottom\'s doormen have gone over to Wigan. Get lobbin\'.'],
+    clear: [['WODEN · Moscow, in exile', 'In Russia we also have pie. Is mostly cabbage. Keep going.'], ['BRIAN THONG', 'That\'s Nexus on your left. If you\'re over 4\'5 you\'ll not get in anyway.'], ['BRIAN THONG', 'Coach from Wigan\'s just pulled up. They\'ll be clempt. Do NOT feed them.'], ['BRIAN THONG', 'One more lot. I can hear a hen party. Put wood in th\'ole and keep quiet.']],
+    boss: ['BRIAN THONG', 'Whatever you do, don\'t spill owt on the bride\'s keks.'], end: ['SHARKY · Spain', 'Lovely stuff. Weather\'s better here, mind.'] },
+  2: { start: ['BRIAN THONG', 'Parr – take a fresh look. Then run.'],
+    clear: [['MUTLEY', 'Them mams are proper chinny. Mind the rolling pins.'], ['DAVE PONDLIFE', 'They where all around us, big bastards. Twenty foot long. Two heads.'], ['DAVE PONDLIFE', 'Told yer. Spinning blades on all its legs, that one.'], ['BRIAN THONG', 'It\'s gone quiet. I don\'t like it. That\'ll be the nest.']],
+    boss: ['BRIAN THONG', 'That\'s the Queen. Burgie water coming off her like a bad pint.'], end: ['BRIAN THONG', 'Milk float\'s here. Don\'t touch the gold tops.'] },
+  3: { start: ['BRIAN THONG', 'Taylor Park. Dog shit levels are at an all time high, so watch your galoshers.'],
+    clear: [['BRI · Belgium', 'We have geese in Belgium also. They are worse.'], ['BRIAN THONG', 'That was Eddie Loon\'s bench. Forty-five-year-old grandad. Full day on it.'], ['BRIAN THONG', 'Slutchy round that lake. Stop roaghmin\' about.'], ['BRIAN THONG', 'Bandstand\'s clear. Now. About the big one.']],
+    boss: ['BRIAN THONG', 'Don\'t make eye contact. I said DON\'T— oh, you\'ve done it now.'], end: ['PETE & GARY · Italy', 'Bravo! In Italy the bus, she never comes.'] },
+  4: { start: ['BRIAN THONG', 'Flangefelter blames "them foreigners from past Thatto Heath". He means Scousers.'],
+    clear: [['MUTLEY', 'Five pound to come in from Liverpool. They\'ve gone proper snaped.'], ['BRIAN THONG', 'Big Mick does a cracking split and gravy. Shame about the truckers.'], ['JAMES · South Africa', 'Is that a road or a car park, bru?'], ['BRIAN THONG', 'Rush hour\'s done. Here comes the honourable member.']],
+    boss: ['BRIAN THONG', 'The MP for Pocketnook and Parr Baths himself. Stop him mithering.'], end: ['BRIAN THONG', 'Lorry\'s going to Billinge. Gerrin.'] },
+  5: { start: ['BRIAN THONG', 'Crank Caverns. The council wanted to fill it with rubbish. Somebody\'s filled it with pies.'],
+    clear: [['BRIAN THONG', 'UN weapons inspectors have been seen round here. They were looking for a chippy.'], ['BRIAN THONG', 'Councillor Doris Crudd. Unusual and Controversial Schemes Committee. Says it all.'], ['WODEN · Moscow, in exile', 'Woden is still alive! Also, behind you.'], ['BRIAN THONG', 'The Beast\'s down. One left. The big fella.']],
+    boss: ['BRIAN THONG', 'Winning Wigan DNA, extracted from a fossilised pie. It\'s him. Fettle him.'], end: ['BRIAN THONG', 'You\'ve done it, fettler. Front page tomorrow. Well. Page seven.'] },
+}[LEVEL_N];
+let radioT = 0; const radioQ = [];
+function radio(line, delay = 0) { if (line) radioQ.push({ who: line[0], text: line[1], delay }); }
+function updateRadio(dt) {
+  if (radioT > 0) { radioT -= dt; if (radioT <= 0) H.radio.style.opacity = 0; return; }
+  if (!radioQ.length) return;
+  radioQ[0].delay -= dt; if (radioQ[0].delay > 0) return;
+  const r = radioQ.shift(); H.radio.innerHTML = `<b>📻 ${r.who}</b>${r.text}`; H.radio.style.opacity = 1; radioT = 5.5;
+  tone(880, .05, 'square', .05); setTimeout(() => tone(660, .07, 'square', .05), 70);
+}
+
+// ---- scoops: five SHCN front pages hidden on every level, each one a real story off the site
+const SCOOPS = {
+  1: [['St Helens men prefer pie and chips to sex', 'news-st-helens-men-prefer-pie-and-chips-to-sex'], ['More pie revelations – Winning Wigan DNA found', 'news-more-pie-revelations-winning-wigan-dna-found-contributed-by'], ['Local venue to re-open as top dance club', 'news-local-venue-to-re-open-as-top-dance-club'], ['Nexus To Be Midget Haven', 'news-nexus-to-be-midget-haven'], ['STUDENT IN PIE SHOCK HORROR PROBE SENSATION', 'news-student-in-pie-shock-horror-probe-sensation']],
+  2: [['Parr – take a fresh look', 'news-parr-take-a-fresh-look'], ['It\'s all going off up Four Acre', 'news-its-all-going-off-up-four-acre'], ['Former US President kicks off in Labour Club', 'news-former-us-president-kicks-off-in-labour-club'], ['Giant Ants spotted on Burgies', 'news-giant-ants-spotted-on-burgies'], ['Burgies olympic shocker', 'news-burgies-olympic-shocker']],
+  3: [['Dog shit levels at all time high', 'news-dog-shit-levels-at-all-time-high'], ['\'Have a go\' Grandad in theft drama', 'news-have-a-go-grandad-in-theft-drama'], ['Clinkham Wood – A Suburban Nature Lover\'s Paradise', 'news-clinkham-wood-a-suburban-nature-lovers-paradise'], ['Bummers Wood Open For All !!!', 'news-bummers-wood-open-for-all'], ['Disguarded Pastry', 'news-disguarded-pastry']],
+  4: [['Scouse congestion charges', 'news-scouse-congestion-charges-contributed-by-mutley'], ['Firefighters angered over council plans', 'news-firefighters-angered-over-council-plans'], ['Sticky patch for St Helens industry', 'news-sticky-patch-for-st-helens-industry'], ['St Helen Patron Saint of Supermarkets & Warehousing', 'news-st-helen-patron-saint-of-supermarkets-warehousing'], ['Lads Be Alert!', 'news-lads-be-alert']],
+  5: [['Billinge or Broke – Bin Laden\'s been Busted', 'news-billinge-or-broke-bin-ladens-been-busted'], ['St Helens Pits to re-open', 'news-st-helens-pits-to-re-open'], ['Saddam Hussein in Laffak Chippy Shocker', 'news-saddam-hussein-in-laffak-chippy-shocker'], ['Jarvis Cocker is an Alien', 'news-jarvis-cocker-is-an-alien'], ['Elton John shuns move to Clock Face', 'news-elton-john-shuns-move-to-clock-face']],
+}[LEVEL_N];
+const scoops = [], scoopsFound = [];
+const paperTex = canvasTex(256, 192, (g, w, h) => { g.fillStyle = '#f4efe2'; g.fillRect(0, 0, w, h); g.fillStyle = '#6600ff'; g.fillRect(0, 0, w, 54); g.fillStyle = '#fda138'; g.font = 'bold 44px Arial Black, Arial'; g.textAlign = 'center'; g.fillText('SHCN', w / 2, 42);
+  g.fillStyle = '#111'; g.font = 'bold 26px Arial'; g.fillText('EXCLUSIVE!', w / 2, 88); g.fillStyle = '#555'; for (let y = 104; y < h - 8; y += 12) g.fillRect(14, y, w - 28 - (y % 36 ? 0 : 60), 5); });
+const paperMat = lam({ map: paperTex, emissive: 0xffffff, emissiveIntensity: .55 }); paperMat.emissiveMap = paperTex;
+SCOOPS.forEach(([title, slug], i) => {
+  const g = new THREE.Group(), z = [-30, -78, -121, -163, -200][i], x = (i % 2 ? 1 : -1) * Math.min(4.2, STREET_HALF - 1.6);
+  const page = new THREE.Mesh(new THREE.BoxGeometry(.6, .45, .03), [lam({ color: 0xf4efe2 }), lam({ color: 0xf4efe2 }), lam({ color: 0xf4efe2 }), lam({ color: 0xf4efe2 }), paperMat, paperMat]); g.add(page);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(.4, .5, 20), new THREE.MeshBasicMaterial({ color: 0x39e0ff, transparent: true, opacity: .8, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.y = -.68; g.add(ring);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.05, .3, 5, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0x39e0ff, transparent: true, opacity: .14, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })); beam.position.y = 2; g.add(beam);
+  g.position.set(x, .8, z); scene.add(g); scoops.push({ g, title, slug, t: i });
+});
+function updateScoops(dt) {
+  for (const s of scoops) { if (!s.g.visible) continue; s.t += dt; s.g.rotation.y += dt * 1.2; s.g.position.y = .8 + Math.sin(s.t * 2) * .08;
+    if (state.mode === 'play' && Math.hypot(s.g.position.x - player.pos.x, s.g.position.z - player.pos.z) < 1.3) {
+      s.g.visible = false; scoopsFound.push(s); score += 200; SFX.pickup(); setTimeout(() => tone(1320, .2, 'square', .09), 140);
+      banner(`SCOOP ${scoopsFound.length}/5`, `SHCN EXCLUSIVE: “${s.title}”`);
+      const all = STORE.get('ph-scoops', []); if (!all.includes(s.slug)) { all.push(s.slug); STORE.set('ph-scoops', all); }
+      if (scoopsFound.length === 5) { score += 1000; radio(['BRIAN THONG', 'That\'s the full edition! Thousand-point bonus. I\'ll get the kettle on.'], 2.5); }
+      hud();
+    } }
+}
+
+// ---- named faces off the site
+function elite(type, x, z, name, o = {}) {
+  const e = spawn(type, x, z, o.delay || 0); e.name = name; e.hp = e.max = Math.round(e.hp * (o.hp || 2.2)); e.quips = o.quips; e.scoreMul = o.score || 3;
+  if (o.scale) { e.g.scale.multiplyScalar(o.scale); e.scale *= o.scale; }
+  const tag = textSprite(name, '#ffffff', '#c8102e'); tag.scale.multiplyScalar(.85 / e.scale); tag.position.set(0, (e.T.bubbleY || 2.75) - .28, 0); e.g.add(tag); e.tag = tag;
+  return e;
+}
+
+// ---- power-up: Bull Bitter
+function updateBuff(dt) {
+  if (!(player.buffT > 0)) return; player.buffT -= dt;
+  const txt = player.buffT > 0 ? `BULL BITTER ×2 DAMAGE · ${Math.ceil(player.buffT)}s` : ''; if (H.buff.textContent !== txt) H.buff.textContent = txt;
+}
+
+// ---- footsteps, ambience and fight music
+let stepAcc = 0, stepN = 0, ambT = rand(8, 16), musicOn = false, musicNext = 0, musicStep = 0, musicGain = null;
+function footsteps(dt, moving) {
+  if (!player.onGround || moving < 1) return; stepAcc += moving * dt;
+  if (stepAcc > 2.1) { stepAcc = 0; stepN++; noise(.07, LEVEL_N === 3 || LEVEL_N === 5 ? 500 : 900, 'lowpass', weather.wet > .3 ? .32 : .2, 200); if (weather.wet > .3) noise(.05, 3000, 'highpass', .06); }
+}
+function ambience(dt) {
+  ambT -= dt; if (ambT > 0 || !AC || state.mode !== 'play') return; ambT = rand(18, 40);
+  if (LEVEL_N === 5) { tone(rand(1400, 2200), .12, 'sine', .05, 600); setTimeout(() => tone(rand(1200, 1800), .1, 'sine', .03, 500), 380); }          // drips
+  else if (LEVEL_N === 3) { tone(420, .35, 'sine', .04, 380); setTimeout(() => tone(340, .5, 'sine', .04, 300), 480); }                                   // owl
+  else if (LEVEL_N === 2 && Math.random() < .6) { for (let i = 0; i < 3; i++) setTimeout(() => noise(.09, 700, 'bandpass', .12, 400), i * 260); }          // dog, two streets away
+  else { for (let i = 0; i < 6; i++) setTimeout(() => tone(i % 2 ? 620 : 780, .34, 'sine', .018), i * 340); }                                            // distant siren
+}
+const BASS = { 1: [55, 55, 65.4, 49], 2: [49, 49, 58.3, 43.7], 3: [61.7, 55, 61.7, 46.2], 4: [65.4, 65.4, 77.8, 58.3], 5: [41.2, 41.2, 49, 38.9] }[LEVEL_N];
+function music() {
+  if (!AC) return;
+  if (!musicGain) { musicGain = AC.createGain(); musicGain.gain.value = 0; musicGain.connect(master); }
+  const fighting = state.mode === 'play' && state.enc > state.cleared, boss = fighting && state.enc === ENCOUNTERS.length - 1;
+  musicGain.gain.value += ((fighting ? (boss ? .34 : .24) : 0) - musicGain.gain.value) * .04;
+  if (!fighting && musicGain.gain.value < .01) { musicNext = 0; return; }
+  const step = boss ? .107 : .125, now = AC.currentTime; if (musicNext < now) { musicNext = now + .05; musicStep = 0; }
+  while (musicNext < now + .25) {
+    const s = musicStep % 16, t0 = musicNext;
+    if (s % 4 === 0) { const o = AC.createOscillator(), g = AC.createGain(); o.frequency.setValueAtTime(120, t0); o.frequency.exponentialRampToValueAtTime(42, t0 + .1); g.gain.setValueAtTime(.8, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + .16); o.connect(g); g.connect(musicGain); o.start(t0); o.stop(t0 + .18); }
+    if (s % 2 === 1 || (boss && s % 4 === 2)) { const len = Math.floor(AC.sampleRate * .03), b = AC.createBuffer(1, len, AC.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      const src = AC.createBufferSource(); src.buffer = b; const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 6000; const g = AC.createGain(); g.gain.value = .22; src.connect(f); f.connect(g); g.connect(musicGain); src.start(t0); }
+    if ([0, 3, 6, 8, 11, 14].includes(s)) { const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sawtooth'; o.frequency.value = BASS[Math.floor(musicStep / 16) % 4] * (s === 14 ? 1.5 : 1); const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = boss ? 900 : 500;
+      g.gain.setValueAtTime(.3, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + .18); o.connect(f); f.connect(g); g.connect(musicGain); o.start(t0); o.stop(t0 + .2); }
+    if (s === 4 || s === 12) { const len = Math.floor(AC.sampleRate * .11), b = AC.createBuffer(1, len, AC.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      const src = AC.createBufferSource(); src.buffer = b; const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; const g = AC.createGain(); g.gain.value = .35; src.connect(f); f.connect(g); g.connect(musicGain); src.start(t0); }
+    musicNext += step; musicStep++;
+  }
+}
 
 // ---------------------------------------------------------------- game state
 const state = { mode: 'title', enc: -1, cleared: -1, checkpoint: 0, won: false };
@@ -1360,7 +1591,7 @@ function resetRun() {
   barrierObjs.forEach((b) => { b.visible = true; b.position.y = 0; });
   state.enc = -1; state.cleared = -1; state.checkpoint = 0; coachSpawn = false; state.won = false; taxiArrive = null;
   player.pos.set(0, 0, 0); player.vel.set(0, 0, 0); player.yaw = 0; player.pitch = 0; player.hp = 100; player.alive = true;
-  player.ammo = [14, 18]; player.grenades = 2; player.weapon = 1; setWeapon(0);
+  player.ammo = [14, 18, 0]; player.grenades = 2; player.buffT = 0; combo.n = 0; combo.t = 0; combo.best = 0; stats.heads = 0; scoopsFound.length = 0; scoops.forEach((sc) => { sc.g.visible = true; }); radioQ.length = 0; lowWarned = false; player.weapon = 1; setWeapon(0);
   score = 0; Object.assign(stats, { shots: 0, hits: 0, kos: 0, dmg: 0, taken: 0, start: performance.now(), time: 0 });
   H.boss.style.display = 'none'; hud();
 }
@@ -1378,7 +1609,7 @@ function respawn() {
 
 function start() {
   audio(); if (AC && AC.state === 'suspended') AC.resume();
-  if (state.mode === 'title' || state.mode === 'won') { resetRun(); banner(LV.start[0], LV.start[1]); }
+  if (state.mode === 'title' || state.mode === 'won') { resetRun(); banner(LV.start[0], LV.start[1]); radio(RADIO.start, 3.5); }
   if (state.mode === 'dead') { respawn(); banner('BACK ON YER FEET', 'Last checkpoint · −250 points'); }
   state.mode = 'play'; overlay(null);
   if (TOUCH) { locked = true; goFullscreen(); }
@@ -1403,7 +1634,9 @@ function win() {
   const R = LV.ranks, rank = score > 9000 ? R[0] : score > 6500 ? R[1] : score > 4000 ? R[2] : R[3];
   $('ph-win-stats').innerHTML = `<div><span>Time</span><b>${Math.floor(stats.time / 60)}:${String(Math.floor(stats.time % 60)).padStart(2, '0')}</b></div>
     <div><span>Splatted</span><b>${stats.kos}</b></div><div><span>Accuracy</span><b>${acc}%</b></div><div><span>Time bonus</span><b>+${timeBonus}</b></div>
+    <div><span>Scon'yed (headshots)</span><b>${stats.heads || 0}</b></div><div><span>Best combo</span><b>×${combo.best}</b></div><div><span>Scoops</span><b>${scoopsFound.length}/5</b></div>
     <div><span>Health bonus</span><b>+${hpBonus}</b></div><div><span>Final score</span><b>${score}${newBest ? ' ★ NEW BEST' : ''}</b></div>`;
+  $('ph-scoops').innerHTML = scoopsFound.length ? '<b>Your scoops – read the full stories on SHCN:</b>' + scoopsFound.map((sc) => `<a href="../${sc.slug}.html" target="_blank" rel="noopener">${sc.title}</a>`).join('') : '<b>No scoops this time.</b> There are five SHCN front pages hidden on every level.';
   $('ph-rank').textContent = rank;
   overlay('won');
 }
@@ -1427,7 +1660,7 @@ $('ph-sens').value = sens; $('ph-sens').addEventListener('input', (e) => { sens 
 $('ph-vol').value = STORE.get('ph-vol', .7); $('ph-vol').addEventListener('input', (e) => { STORE.set('ph-vol', +e.target.value); if (master) master.gain.value = +e.target.value; });
 canvas.addEventListener('click', () => { if (!TOUCH && state.mode === 'play' && !locked) canvas.requestPointerLock(); });
 const BEST_KEY = LEVEL_N === 1 ? 'ph-best' : 'ph-best-' + LEVEL_N;
-$('ph-best').textContent = STORE.get(BEST_KEY, 0) ? 'Your best on this level: ' + STORE.get(BEST_KEY, 0) : '';
+$('ph-best').textContent = (STORE.get(BEST_KEY, 0) ? 'Your best on this level: ' + STORE.get(BEST_KEY, 0) + ' · ' : '') + `SHCN scoops found: ${STORE.get('ph-scoops', []).length}/25`;
 // level-specific words on the overlays
 document.querySelector('#ph-title h1 small').textContent = LV.sub;
 document.querySelector('#ph-title .brief div:last-child').innerHTML = LV.brief.map((p) => `<p>${p}</p>`).join('');
@@ -1472,7 +1705,7 @@ function updatePlayer(dt) {
   if (player.pos.y <= 0) { player.pos.y = 0; player.vel.y = 0; player.onGround = true; }
   collide(player.pos, .4);
   const moving = Math.hypot(player.vel.x, player.vel.z);
-  player.bob += dt * moving * 1.6;
+  player.bob += dt * moving * 1.6; footsteps(dt, moving);
   if (mouseDown) fire();
   // catch your breath: slowly heal back up to 50 after 4 seconds without being hit
   player.calmT = (player.calmT || 0) + dt; if (player.alive && player.calmT > 4 && player.hp < 50) { player.hp = Math.min(50, player.hp + 4 * dt); hud(); }
@@ -1501,9 +1734,10 @@ function updateEnemies(dt, t) {
     else if (dist < near) mv.sub(to);
     e.strafeT -= dt; if (e.strafeT <= 0) { e.strafe *= -1; e.strafeT = rand(1, 3); }
     if (!e.T.melee && dist < far + 2) mv.add(new THREE.Vector3(-to.z, 0, to.x).multiplyScalar(e.strafe * .7));
+    if (e.dodgeT > 0) { e.dodgeT -= dt; mv.set(-to.z * e.strafe, 0, to.x * e.strafe); }
     // separation
     for (const o of enemies) if (o !== e && !o.dead && o.delay <= 0) { const dx = g.position.x - o.g.position.x, dz = g.position.z - o.g.position.z, d2 = dx * dx + dz * dz; if (d2 < 1.2 && d2 > 1e-4) mv.add(new THREE.Vector3(dx, 0, dz).multiplyScalar(.6 / d2)); }
-    const spd = e.T.speed * (e.hitT > 0 ? .3 : 1);
+    const spd = e.T.speed * (e.rage || 1) * (e.hitT > 0 ? .3 : 1) * (e.dodgeT > 0 ? 2.2 : 1);
     if (mv.lengthSq() > .01) { mv.normalize(); g.position.addScaledVector(mv, spd * dt); e.walk += dt * spd * 3; }
     const before = g.position.clone(); const tmp = new THREE.Vector3(g.position.x, 0, g.position.z);
     tmp.x = clamp(tmp.x, -STREET_HALF + .4, STREET_HALF - .4); tmp.z = clamp(tmp.z, END_Z + 1, START_Z - 1);
@@ -1519,13 +1753,13 @@ function updateEnemies(dt, t) {
     // attack
     e.cd -= dt;
     if (e.cd <= 0 && dist < (e.T.melee ? far + .6 : 26)) {
-      e.cd = rand(e.T.cd[0], e.T.cd[1]) * EASY.cd;
-      if (e.T.melee) { if (dist < far + .6) { C.ctl.once(Math.random() < .7 ? 'Unarmed_Melee_Attack_Punch_A' : 'Unarmed_Melee_Attack_Kick', 1.4); if (e.T.sfx) SFX[e.T.sfx](e.T.boss); hurtPlayer(e.T.dmg, pick(e.T.meleeLines || ['Bouncer gave you a slap!', 'Thrown out!', 'Headlocked!'])); } }
-      else if (e.T.mixed || e.type === 'hen' || e.type === 'bride') { if (dist < 2.2) { C.ctl.once('Unarmed_Melee_Attack_Punch_A', 1.5); hurtPlayer(e.T.dmg, pick(e.T.meleeLines || ['Handbagged!'])); } else enemyThrow(e); }
+      e.cd = rand(e.T.cd[0], e.T.cd[1]) * EASY.cd / (e.rage || 1);
+      if (e.T.melee) { if (dist < far + .6) { C.ctl.once(Math.random() < .7 ? 'Unarmed_Melee_Attack_Punch_A' : 'Unarmed_Melee_Attack_Kick', 1.4); if (e.T.sfx) SFX[e.T.sfx](e.T.boss); hurtPlayer(e.T.dmg, pick(e.T.meleeLines || ['Bouncer gave you a slap!', 'Thrown out!', 'Headlocked!']), g.position); } }
+      else if (e.T.mixed || e.type === 'hen' || e.type === 'bride') { if (dist < 2.2) { C.ctl.once('Unarmed_Melee_Attack_Punch_A', 1.5); hurtPlayer(e.T.dmg, pick(e.T.meleeLines || ['Handbagged!']), g.position); } else enemyThrow(e); }
       else enemyThrow(e);
     }
     if (e.sayT > 0) { e.sayT -= dt; if (e.sayT <= 0 && e.bubble) { g.remove(e.bubble); e.bubble = null; } }
-    else if (Math.random() < dt * (e.T.boss ? .35 : .12) && dist < 22) say(e, pick(e.T.quips));
+    else if (Math.random() < dt * (e.T.boss || e.name ? .35 : .12) && dist < 22) say(e, pick(e.quips || e.T.quips));
   }
   if (bossMax > 0 && state.enc === ENCOUNTERS.length - 1) { H.boss.style.display = bossAlive ? 'block' : 'none'; H.bossBar.style.width = (bossHp / bossMax * 100) + '%'; }
 }
@@ -1538,15 +1772,19 @@ function updateShots(dt) {
     const steps = Math.max(1, Math.ceil(s.v.length() * dt / .25)), sd = dt / steps;
     for (let k = 0; k < steps && !hit; k++) {
       s.v.y -= 9.8 * sd; p.addScaledVector(s.v, sd);
-      if (s.kind === 'pie') for (const e of enemies) { if (e.dead || e.delay > 0) continue; const dx = p.x - e.g.position.x, dz = p.z - e.g.position.z; if (dx * dx + dz * dz < (.55 * e.scale) ** 2 && p.y < 2.3 * e.scale) { damageEnemy(e, 34, s.v.clone()); stats.hits++; hitMarker(); hit = true; break; } }
+      if (s.kind !== 'barm') for (const e of enemies) { if (e.dead || e.delay > 0) continue; const dx = p.x - e.g.position.x, dz = p.z - e.g.position.z; if (dx * dx + dz * dz < (.55 * e.scale) ** 2 && p.y < 2.3 * e.scale) {
+        // hit them in the head for double damage: SCON'YED
+        const head = !e.T.creature && p.y > 1.42 * e.scale, base = s.kind === 'brick' ? 120 : 34;
+        if (head) { stats.heads++; score += 50; callout(lingo("SCON'YED"), '#39e0ff'); tone(1400, .08, 'square', .09); }
+        damageEnemy(e, base * (head ? 2 : 1), s.v.clone()); stats.hits++; hitMarker(head); hit = true; break; } }
       if (p.y <= .05) break;
     }
-    if (!hit && (p.y <= .05 || Math.abs(p.x) > 9.9 || s.t <= 0)) hit = true;
+    if (!hit && (p.y <= .05 || Math.abs(p.x) > WALL_X - .05 || s.t <= 0)) hit = true;
     if (!hit && p.y < 1.2) for (const c of colliders) if (p.x > c.minX && p.x < c.maxX && p.z > c.minZ && p.z < c.maxZ) { hit = true; break; }
     if (s.kind === 'barm' && hit && s.t > 0 && p.y <= .05) { s.v.y = Math.abs(s.v.y) * .35; s.v.x *= .6; s.v.z *= .6; p.y = .06; hit = false; }
     if (hit) {
-      if (s.kind === 'barm') explode(p, 5.5, 95, 'barm'); else explode(p, 1.8, 14, 'pie');
-      if (Math.abs(p.x) > 9.8) decal(new THREE.Vector3(Math.sign(p.x) * 9.95, p.y, p.z), new THREE.Vector3(-Math.sign(p.x), 0, 0), 'pie', .45);
+      if (s.kind === 'barm') explode(p, 5.5, 95, 'barm'); else if (s.kind === 'brick') { explode(p, 1.6, 30, 'brick'); tone(70, .15, 'sine', .3, 40); shake = Math.max(shake, .2); } else explode(p, 1.8, 14, 'pie');
+      if (s.kind === 'pie' && Math.abs(p.x) > WALL_X - .15) decal(new THREE.Vector3(Math.sign(p.x) * WALL_X, p.y, p.z), new THREE.Vector3(-Math.sign(p.x), 0, 0), 'pie', .45);
       scene.remove(s.m); shots.splice(i, 1);
     }
   }
@@ -1555,7 +1793,7 @@ function updateShots(dt) {
     const s = eshots[i]; s.t -= dt; s.v.y -= s.g * dt; s.m.position.addScaledVector(s.v, dt); s.m.rotation.x += dt * 10;
     const p = s.m.position, dx = p.x - eye.x, dz = p.z - eye.z;
     let gone = s.t <= 0 || p.y <= .05;
-    if (!gone && dx * dx + dz * dz < .42 && p.y > player.pos.y + .2 && p.y < eye.y + .3) { hurtPlayer(s.dmg, pick(PROJ[s.kind].hit)); gone = true; }
+    if (!gone && dx * dx + dz * dz < .42 && p.y > player.pos.y + .2 && p.y < eye.y + .3) { hurtPlayer(s.dmg, pick(PROJ[s.kind].hit), p.clone().addScaledVector(s.v, -1)); gone = true; }
     if (gone) { burst(p, PROJ[s.kind].burst, 6, 2); scene.remove(s.m); eshots.splice(i, 1); }
   }
   for (let i = fx.length - 1; i >= 0; i--) { const f = fx[i]; f.t -= dt; f.v.y -= 12 * dt; f.m.position.addScaledVector(f.v, dt); if (f.m.position.y < .03) { f.m.position.y = .03; f.v.multiplyScalar(.4); } if (f.t <= 0) { scene.remove(f.m); fx.splice(i, 1); } }
@@ -1564,15 +1802,15 @@ function updateEncounters() {
   const z = player.pos.z;
   const next = state.enc + 1;
   if (next < ENCOUNTERS.length && z < ENCOUNTERS[next].trigger && state.cleared === state.enc) {
-    const E = ENCOUNTERS[next]; state.enc = next; E.spawn(); banner(E.title, E.boss ? LV.bossSub : E.sub || null);
+    const E = ENCOUNTERS[next]; state.enc = next; E.spawn(); banner(E.title, E.boss ? LV.bossSub : E.sub || null); if (E.boss) radio(RADIO.boss, 3.2);
     if (E.boss) { H.boss.style.display = 'block'; H.bossName.textContent = LV.bossName; }
   }
   if (state.enc > state.cleared) {
     const live = enemies.filter((e) => !e.dead).length;
     if (live === 0) {
       state.cleared = state.enc;
-      if (state.cleared < BARRIERS.length) { barrierObjs[state.cleared].userData.drop = true; banner('AREA CLEAR', 'The barriers are coming down. Keep moving.'); score += 250; }
-      else { H.boss.style.display = 'none'; banner(LV.end[0], LV.end[1]); setObj('Wait for it…'); taxiArrive = { t: 0 }; score += 1000; }
+      if (state.cleared < BARRIERS.length) { barrierObjs[state.cleared].userData.drop = true; banner('AREA CLEAR', 'The barriers are coming down. Keep moving.'); score += 250; radio(RADIO.clear[state.cleared], 3); }
+      else { H.boss.style.display = 'none'; banner(LV.end[0], LV.end[1]); setObj('Wait for it…'); taxiArrive = { t: 0 }; score += 1000; radio(RADIO.end, 3.4); }
       hud();
     }
   }
@@ -1590,9 +1828,11 @@ function updateEncounters() {
 let lastDt = 0;
 const clock = new THREE.Clock(); let t = 0, fpsAcc = 0, fpsN = 0, frameNo = 0, lastReal = performance.now(), slowAcc = 0, fastAcc = 0;
 function frame() {
-  const dt = Math.min(.05, clock.getDelta()); t += dt; lastDt = dt;
+  const rdt = Math.min(.05, clock.getDelta()); if (slowT > 0) slowT -= rdt;
+  const dt = rdt * (slowT > 0 ? .28 : 1); t += dt; lastDt = dt;
   if (state.mode === 'play') {
-    updatePlayer(dt); updateEnemies(dt, t); updateShots(dt); updateEncounters(); updateTraffic(dt);
+    updatePlayer(dt); updateEnemies(dt, t); updateShots(dt); updateEncounters(); updateTraffic(dt); updateScoops(rdt); updateRadio(rdt); updateBuff(dt); ambience(rdt);
+    if (combo.t > 0) { combo.t -= dt; if (combo.t <= 0) { combo.n = 0; H.combo.style.opacity = 0; } }
     if (state.mode === 'play') stats.time = (performance.now() - stats.start) / 1000;
   } else if (state.mode === 'dead' || state.mode === 'won') {
     for (const e of enemies) if (e.delay <= 0 && (!e.dead || e.deadT < 4)) { if (e.dead) e.deadT += dt; e.c.ctl.update(dt); }
@@ -1630,6 +1870,10 @@ function frame() {
     if (state.mode === 'play' && p.g.visible && p.g.position.distanceTo(new THREE.Vector3(player.pos.x, .6, player.pos.z)) < 1.2) { PICK[p.kind].apply(); p.g.visible = false; SFX.pickup(); toast(PICK[p.kind].label); hud(); } }
   // club music volume by distance to NITECLUB
   if (clubGain) clubGain.gain.value = LEVEL_N === 1 && (state.mode === 'play' || state.mode === 'title') ? clamp(1 - Math.abs(player.pos.z + 76) / 40, 0, 1) * .5 : 0;
+  music();
+  if (skyGroup) skyGroup.position.set(camera.position.x, 0, camera.position.z);
+  if (dirT > 0) { dirT -= rdt; if (dirT <= 0) H.dir.style.opacity = 0; }
+  if (callT > 0) { callT -= rdt; if (callT <= 0) H.call.style.opacity = 0; }
   // HUD timers
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) H.toast.style.opacity = 0; }
   if (hitT > 0) { hitT -= dt; if (hitT <= 0) H.hit.style.opacity = 0; }
@@ -1651,4 +1895,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 hud(); overlay('title'); frame();
-window.__ph = { state, player, enemies, start, ENCOUNTERS, fire, throwGrenade, setWeapon, stats, damageEnemy, get score() { return score; }, weather, get taxi() { return taxiArrive; }, exitAt: LV.exit.at, cars, renderer, scene, fx, decals };
+window.__ph = { combo, scoops, scoopsFound, elite, radioQ, get slow() { return slowT; }, state, player, enemies, start, ENCOUNTERS, fire, throwGrenade, setWeapon, stats, damageEnemy, get score() { return score; }, weather, get taxi() { return taxiArrive; }, exitAt: LV.exit.at, cars, renderer, scene, fx, decals };
