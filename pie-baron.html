@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Pie Baron – St Helens Celebrity News</title>
+<meta name="description" content="The Pie Baron – climb the scaffolding and get the secret pie recipe back off the Pie Baron of Wigan. An SHCN original retro arcade game.">
+<link rel="canonical" href="https://sthelenscelebritynews.co.uk/pie-baron.html">
+<meta name="robots" content="index,follow">
+<meta property="og:site_name" content="St Helens Celebrity News">
+<meta property="og:type" content="website">
+<meta property="og:title" content="The Pie Baron">
+<meta property="og:description" content="The Pie Baron – climb the scaffolding and get the secret pie recipe back off the Pie Baron of Wigan. An SHCN original retro arcade game.">
+<meta property="og:url" content="https://sthelenscelebritynews.co.uk/pie-baron.html">
+<meta property="og:image" content="https://sthelenscelebritynews.co.uk/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+
+<meta name="theme-color" content="#6600FF">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%236600FF'/%3E%3Ctext x='8' y='12.5' font-family='Arial' font-weight='bold' font-size='11' text-anchor='middle' fill='%23FDA138'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="wrap">
+<header class="masthead">
+  <div class="brand">
+    <a href="index.html"><img class="logo" src="img/scn-logo.gif" alt="St Helens Celebrity News" width="1275" height="82"></a>
+    <img class="strap" src="img/strapline.gif" alt="The glitzy world of the post-industrial shithole" width="479" height="31">
+  </div>
+  <div class="snaps" aria-label="Spotted around town"><figure><img src="img/topshops.jpg" alt="Top shops" width="72" height="96"><figcaption>Top shops</figcaption></figure><figure><img src="img/sarrys.jpg" alt="Sarry&#x27;s" width="72" height="96"><figcaption>Sarry&#x27;s</figcaption></figure><figure><img src="img/pitrags.jpg" alt="Woden" width="72" height="96" style="object-position:50% 0"><figcaption>Woden</figcaption></figure><figure><img src="img/house.jpg" alt="Celeb HQ" width="72" height="96"><figcaption>Celeb HQ</figcaption></figure></div>
+</header>
+</div>
+<div class="navwrap"><div class="wrap">
+<nav class="navbar" aria-label="Main">
+  <a class="navlogo" href="index.html" aria-label="St Helens Celebrity News – home"><img src="img/scn-logo-mobile.png" alt="" width="1291" height="98"></a>
+  <ul><li><a class="btn" href="index.html">Home</a></li><li><a class="btn" href="news.html">News</a></li><li><a class="btn" href="pubs.html">Pub Guide</a></li><li><a class="btn" href="dictionary.html">&#x27;Tellins Dictionary</a></li><li><a class="btn" href="world.html">Around the World</a></li><li><a class="btn" href="quotes.html">Quotes</a></li><li><a class="btn" href="arcade.html" aria-current="page">Arcade</a></li><li><a class="btn" href="search.html">Search</a></li></ul>
+  <details><summary><span class="burger" aria-hidden="true"></span>Menu</summary><ul><li><a class="btn" href="index.html">Home</a></li><li><a class="btn" href="news.html">News</a></li><li><a class="btn" href="pubs.html">Pub Guide</a></li><li><a class="btn" href="dictionary.html">&#x27;Tellins Dictionary</a></li><li><a class="btn" href="world.html">Around the World</a></li><li><a class="btn" href="quotes.html">Quotes</a></li><li><a class="btn" href="arcade.html" aria-current="page">Arcade</a></li><li><a class="btn" href="search.html">Search</a></li></ul></details>
+  <span class="issue">Est. 2002 · Still fettlin'</span>
+</nav>
+</div></div>
+
+<div class="wrap">
+<main id="content">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap">
+<div class="cols"><div class="main">
+<section class="panel grey game">
+  <h1 class="pagetitle">The Pie Baron</h1>
+  <p>The Pie Baron of Wigan has made off with the secret Pimblett's recipe and he's sat at the top of the scaffolding lobbing growlers at anyone who comes near. Climb the ladders, jump the pies, grab the chips on the way and get it back.</p>
+  <div id="game-stage" class="pi-stage">
+    <canvas id="game-canvas" class="game-canvas" width="480" height="560" style="aspect-ratio:480/560" aria-label="The Pie Baron game. Arrows to walk and climb, space to jump.">Your browser can't run this game. Try a newer one, it's not 2002 any more.</canvas>
+    <div class="fightpad" aria-label="Touch controls">
+  <div class="fp-move">
+    <button type="button" id="pad-up" class="pi-btn up" aria-label="Up">▲</button>
+    <button type="button" id="pad-left" class="pi-btn left" aria-label="Left">◀</button>
+    <button type="button" id="pad-down" class="pi-btn down" aria-label="Down">▼</button>
+    <button type="button" id="pad-right" class="pi-btn right" aria-label="Right">▶</button>
+  </div>
+  <div class="fp-act"><button type="button" id="pad-fire" class="pi-btn fire pie" aria-label="JUMP">JUMP</button></div>
+</div>
+    <div class="pi-opts"><button type="button" id="game-pause" class="button">Pause</button> <button type="button" id="game-mute" class="button" aria-pressed="false">Sound: on</button></div>
+  </div>
+  <p class="meta">Keyboard: ← → to walk, ↑ ↓ on the ladders, Space to jump, P to pause. Jump a pie for 100. Your high score is saved on this device.</p>
+</section>
+<p><a href="arcade.html">&lt;&lt; Back to the Arcade</a></p>
+</div></div>
+</main>
+<div class="javabar"><img src="img/javabar.gif" alt="Java Bar" width="450" height="72"></div>
+<footer class="site">
+  <p>Back in the day we clocked up <span class="counter">1112808</span> page views since July 2002.</p>
+  <p>© St Helens Celebrity News 2002–2026 · All St Helens born and bread · Complaints to the webmaster</p>
+</footer>
+</div>
+<script>(function(){var m=document.querySelector('.masthead'),b=document.documentElement;if(!m||!('IntersectionObserver' in window)){b.classList.add('scrolled');return;}new IntersectionObserver(function(e){b.classList.toggle('scrolled',!e[0].isIntersecting);}).observe(m);document.addEventListener('click',function(ev){var d=document.querySelector('.navbar details[open]');if(d&&!d.contains(ev.target))d.removeAttribute('open');});})();</script>
+<script>if(/[?&]embed=1/.test(location.search)){document.documentElement.classList.add('embed');var st=document.querySelector('.pi-stage');document.body.textContent='';document.body.appendChild(st);addEventListener('keydown',function(e){if(e.key==='Escape')parent.postMessage('shcn-exit','*')});}</script><script src="arcade-kit.js"></script><script src="pie-baron.js"></script>
+</body>
+</html>

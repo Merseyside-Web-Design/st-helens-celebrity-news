@@ -268,10 +268,9 @@ function buildArcade(z0, FRONT) {
     ARC.machines.push({ x: x + Math.sin(ry) * .9, z: z + Math.cos(ry) * .9, kind: 'game', label: title, url });
   }
   const back = xb - .55, fy = -Math.PI / 2;
-  cabinet(back, doorZ + 4.8, fy, 'Parr Invaders', 0x6600ff, '../img/arcade-invaders.jpg', '../parr-invaders.html');
-  cabinet(back, doorZ + 1.6, fy, 'Westfield St Rumble', 0xc8102e, '../img/arcade-rumble.jpg', '../westfield-st-rumble.html');
-  cabinet(back, doorZ - 1.6, fy, 'Cross the East Lancs', 0x1a8a3a, '../img/arcade-eastlancs.jpg', '../cross-the-east-lancs.html');
-  cabinet(back, doorZ - 4.8, fy, 'Pie Snake', 0xfd8a18, '../img/arcade-snake.jpg', '../pie-snake.html');
+  [['Parr Invaders', 0x6600ff, 'invaders', 'parr-invaders'], ['Westfield St Rumble', 0xc8102e, 'rumble', 'westfield-st-rumble'], ['Cross the East Lancs', 0x1a8a3a, 'eastlancs', 'cross-the-east-lancs'], ['Pie Snake', 0xfd8a18, 'snake', 'pie-snake'],
+    ['HONK!', 0x1f6a9a, 'honk', 'honk'], ['Chippy Chase', 0xd8a020, 'chippy', 'chippy-chase'], ['The Pie Baron', 0xa01e3a, 'baron', 'pie-baron'], ['Crank Caverns Run', 0x4a382a, 'crank', 'crank-run']]
+    .forEach(([title, col, img, page], i) => cabinet(back, doorZ + (3.5 - i) * 1.56, fy, title, col, `../img/arcade-${img}.jpg`, `../${page}.html`));
   // fruit machine and grabber on the left wall (as you walk in)
   function bandit(x, z) {
     const g = new THREE.Group(), body = lam({ color: 0xc8102e, emissive: 0xc8102e, emissiveIntensity: .3 });
