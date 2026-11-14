@@ -65,10 +65,22 @@ body.playing #hud{display:block}
 #touch{position:fixed;inset:0;z-index:6;display:none;touch-action:none}body.touch.playing #touch{display:block}
 .tb{position:absolute;border-radius:50%;border:3px solid rgba(255,255,255,.7);background:rgba(16,8,34,.5);color:#fff;font:10px "Press Start 2P",monospace;display:flex;align-items:center;justify-content:center;touch-action:none}.tb.down{background:rgba(253,161,56,.6)}
 #t-l{left:max(16px,env(safe-area-inset-left));bottom:20px;width:92px;height:92px;font-size:26px}#t-r{left:calc(max(16px,env(safe-area-inset-left)) + 106px);bottom:20px;width:92px;height:92px;font-size:26px}
-#t-brake{right:max(16px,env(safe-area-inset-right));bottom:18px;width:88px;height:88px}#t-boost{right:calc(max(16px,env(safe-area-inset-right)) + 100px);bottom:18px;width:74px;height:74px;border-color:#39e0ff}#t-hand{right:max(16px,env(safe-area-inset-right));bottom:118px;width:74px;height:74px;border-color:#ff4fd8}
+#t-brake{right:max(16px,env(safe-area-inset-right));bottom:18px;width:88px;height:88px}#t-boost{right:calc(max(16px,env(safe-area-inset-right)) + 100px);bottom:25px;width:74px;height:74px;border-color:#39e0ff}#t-hand{right:calc(max(16px,env(safe-area-inset-right)) + 186px);bottom:25px;width:74px;height:74px;border-color:#ff4fd8}
 #t-gas{display:none}#t-pause,#t-reset{top:8px;width:40px;height:40px;border-radius:8px;font-size:12px;left:50%}#t-pause{margin-left:96px}#t-reset{margin-left:144px}
-body.touch #map{display:none}body.touch #br{left:50%;right:auto;transform:translateX(-50%);bottom:6px;width:210px;text-align:center}body.touch #mph{font-size:42px}body.touch .meter{height:8px;margin-top:4px}body.touch #radio{left:max(14px,env(safe-area-inset-left));transform:none;bottom:auto;top:46px;max-width:36vw;font-size:11px;padding:6px 8px}body.touch #tl{max-width:36vw;left:max(14px,env(safe-area-inset-left))}body.touch #obj{display:none}body.touch #tr{right:max(14px,env(safe-area-inset-right))}body.touch #score{font-size:12px}body.touch #chain{font-size:20px;min-height:22px}body.touch #note{font-size:17px;top:17%}body.touch #note.s3{font-size:21px}body.touch .p{font-size:10px}body.touch .p.big{font-size:18px}
+/* phone HUD: everything lives round the edges so nothing sits on top of the car */
+body.touch #map{display:none}body.touch #obj{display:none}
+body.touch #tl{left:max(14px,env(safe-area-inset-left));top:6px;max-width:34vw;padding:5px 8px}body.touch #stage{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.touch #radio{left:max(14px,env(safe-area-inset-left));transform:none;bottom:auto;top:34px;max-width:34vw;font-size:11px;padding:6px 8px}
+body.touch #tc{top:6px}body.touch #time{font-size:16px}body.touch #pos{font-size:24px;margin-top:2px}body.touch #pos small{font-size:11px}body.touch #road{margin-top:4px;font-size:7px}
+body.touch #tr{right:max(14px,env(safe-area-inset-right));top:6px}body.touch #score{font-size:12px}
+body.touch #chain{position:fixed;right:calc(max(14px,env(safe-area-inset-right)) + 96px);top:2px;font-size:18px;min-height:0}
+body.touch #cargo,body.touch #heat{position:fixed;left:50%;top:46px;transform:translateX(-50%);margin:0;white-space:nowrap}body.touch #cargo{font-size:13px}
+body.touch #br{right:max(14px,env(safe-area-inset-right));bottom:auto;top:26px;width:124px}body.touch #br br{display:none}
+body.touch #mph{font-size:26px;text-shadow:2px 2px 0 var(--purple),4px 4px 0 #000}body.touch #br small{font-size:7px;margin-left:5px}body.touch #gear{font-size:9px;padding:3px 5px;margin-left:5px}
+body.touch .meter{height:7px;margin-top:4px;border-width:1px}body.touch .meter span{font-size:5px;line-height:6px}
+body.touch #note{font-size:16px;top:66px}body.touch #note.s3{font-size:20px}body.touch #pop{top:96px}body.touch .p{font-size:10px}body.touch .p.big{font-size:18px}body.touch #wrong{font-size:13px;top:46%}body.touch #big{top:34%}
 #rotate{position:fixed;inset:0;z-index:20;display:none;background:var(--ink);text-align:center;align-items:center;justify-content:center;flex-direction:column;padding:24px;font:12px/1.8 "Press Start 2P",monospace}#rotate b{font:40px Bungee,Impact,sans-serif;color:var(--orange);display:block;margin-bottom:14px}
+@media (max-width:720px){#t-l,#t-r{width:80px;height:80px}#t-r{left:calc(max(16px,env(safe-area-inset-left)) + 92px)}#t-brake{width:78px;height:78px}#t-boost,#t-hand{width:64px;height:64px;font-size:8px}#t-boost{right:calc(max(16px,env(safe-area-inset-right)) + 88px)}#t-hand{right:calc(max(16px,env(safe-area-inset-right)) + 162px)}}
 @media (orientation:portrait){body.touch #rotate{display:flex}}
 @media (max-height:520px){.card{padding:12px 16px}h1{font-size:26px;margin:2px 0 6px}.card p{font-size:12px;margin:6px 0}.btn{padding:10px;font-size:12px;margin-top:8px}.motor{padding:6px 10px;margin:6px 0}.motor b{font-size:17px}.brief{margin:8px 0;padding:8px 10px}.front b{font-size:20px}td{padding:2px 8px;font-size:11px}#big{font-size:64px}#mph{font-size:48px}}
 </style>
