@@ -2009,9 +2009,9 @@ if (LEVEL_N > 1) document.title = `PIE HARD – Level ${LEVEL_N}: ${LV.name} | S
 const unlocked = Math.max(STORE.get('ph-unlocked', 1), LEVEL_N);
 $('ph-levels').innerHTML = [1, 2, 3, 4, 5].map((n) => n <= unlocked
   ? `<a class="lvl${n === LEVEL_N ? ' on' : ''}" href="${n === 1 ? './' : '?level=' + n}"><b>${n}</b>${LEVELS[n].name}</a>`
-  : `<span class="lvl locked"><b>${n}</b>LOCKED</span>`).join('');
+  : `<span class="lvl locked"><b>${n}</b>LOCKED</span>`).join('') + '<a class="lvl new" href="drive.html"><b>6</b>TWOC</a>';
 if (LEVEL_N < 5) { $('ph-next').hidden = false; $('ph-next').textContent = `Next level: ${LEVELS[LEVEL_N + 1].name} →`; $('ph-next').addEventListener('click', () => { location.href = '?level=' + (LEVEL_N + 1); }); }
-else $('ph-soon').textContent = 'That\'s the lot – you\'ve completed PIE HARD. St Helens salutes you.';
+else { $('ph-next').hidden = false; $('ph-next').textContent = 'Next level: TWOC – one lap of St Helens →'; $('ph-next').addEventListener('click', () => { location.href = 'drive.html'; }); $('ph-soon').textContent = 'Crank Caverns is done. There\'s a Nova outside Nexus with the keys in.'; }
 
 // ---------------------------------------------------------------- update
 function collide(pos, r) {
